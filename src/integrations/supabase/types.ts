@@ -14,11 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      constellations: {
+        Row: {
+          created_at: string
+          id: string
+          question_text: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_text: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_text?: string
+          title?: string
+        }
+        Relationships: []
+      }
       stars: {
         Row: {
           audio_path: string
           audio_url: string
           color: string
+          constellation_id: string | null
           created_at: string
           duration_seconds: number
           id: string
@@ -34,6 +56,7 @@ export type Database = {
           audio_path: string
           audio_url: string
           color: string
+          constellation_id?: string | null
           created_at?: string
           duration_seconds: number
           id?: string
@@ -49,6 +72,7 @@ export type Database = {
           audio_path?: string
           audio_url?: string
           color?: string
+          constellation_id?: string | null
           created_at?: string
           duration_seconds?: number
           id?: string
@@ -60,7 +84,15 @@ export type Database = {
           x_position?: number
           y_position?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stars_constellation_id_fkey"
+            columns: ["constellation_id"]
+            isOneToOne: false
+            referencedRelation: "constellations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

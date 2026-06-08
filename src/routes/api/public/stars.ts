@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const COLUMNS =
-  "id, audio_url, max_audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at";
+  "id, constellation_id, audio_url, max_audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at";
 
 export const Route = createFileRoute("/api/public/stars")({
   server: {
