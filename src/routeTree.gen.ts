@@ -10,33 +10,52 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicStarsRouteImport } from './routes/api/public/stars'
+import { Route as ApiPublicStarsLatestRouteImport } from './routes/api/public/stars.latest'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStarsRoute = ApiPublicStarsRouteImport.update({
+  id: '/api/public/stars',
+  path: '/api/public/stars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStarsLatestRoute = ApiPublicStarsLatestRouteImport.update({
+  id: '/latest',
+  path: '/latest',
+  getParentRoute: () => ApiPublicStarsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
+  '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
+  '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
+  '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/stars' | '/api/public/stars/latest'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/stars' | '/api/public/stars/latest'
+  id: '__root__' | '/' | '/api/public/stars' | '/api/public/stars/latest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicStarsRoute: typeof ApiPublicStarsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +67,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stars': {
+      id: '/api/public/stars'
+      path: '/api/public/stars'
+      fullPath: '/api/public/stars'
+      preLoaderRoute: typeof ApiPublicStarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stars/latest': {
+      id: '/api/public/stars/latest'
+      path: '/latest'
+      fullPath: '/api/public/stars/latest'
+      preLoaderRoute: typeof ApiPublicStarsLatestRouteImport
+      parentRoute: typeof ApiPublicStarsRoute
+    }
   }
 }
 
+interface ApiPublicStarsRouteChildren {
+  ApiPublicStarsLatestRoute: typeof ApiPublicStarsLatestRoute
+}
+
+const ApiPublicStarsRouteChildren: ApiPublicStarsRouteChildren = {
+  ApiPublicStarsLatestRoute: ApiPublicStarsLatestRoute,
+}
+
+const ApiPublicStarsRouteWithChildren = ApiPublicStarsRoute._addFileChildren(
+  ApiPublicStarsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicStarsRoute: ApiPublicStarsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
