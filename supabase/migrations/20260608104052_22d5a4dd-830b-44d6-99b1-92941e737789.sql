@@ -1,0 +1,1 @@
+TRUNCATE TABLE public.stars, public.constellations RESTART IDENTITY CASCADE;
