@@ -2,9 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Recorder } from "@/components/Recorder";
-import { Constellation } from "@/components/Constellation";
+import { ActiveSessionOverlay } from "@/components/ActiveSession";
+import { ConstellationArchive } from "@/components/ConstellationArchive";
 import { MaxDataPanel } from "@/components/MaxDataPanel";
-import { fetchStars, QUESTION_TEXT, type StarRow } from "@/lib/stars";
+import {
+  createConstellationFromStars,
+  fetchConstellations,
+  QUESTION_TEXT,
+  type ConstellationWithStars,
+  type StarRow,
+} from "@/lib/stars";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,33 +33,31 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [stars, setStars] = useState<StarRow[]>([]);
+  const [activeStars, setActiveStars] = useState<StarRow[]>([]);
+  const [archive, setArchive] = useState<ConstellationWithStars[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<"input" | "observe">("input");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const reload = useCallback(async () => {
+  const reloadArchive = useCallback(async () => {
     try {
-      const data = await fetchStars();
-      setStars(data);
+      const data = await fetchConstellations();
+      setArchive(data);
     } catch (err) {
       console.error(err);
     }
   }, []);
 
   useEffect(() => {
-    reload();
-  }, [reload]);
+    reloadArchive();
+  }, [reloadArchive]);
 
   const handleSubmitted = (star: StarRow) => {
-    setStars((prev) => {
-      if (prev.some((s) => s.id === star.id)) return prev;
-      return [...prev, star].sort((a, b) =>
-        a.created_at.localeCompare(b.created_at),
-      );
-    });
-    setTab("observe");
-    reload();
+    setActiveStars((prev) =>
+      prev.some((s) => s.id === star.id) ? prev : [...prev, star],
+    );
   };
 
   const playStar = (star: StarRow) => {
@@ -71,6 +76,27 @@ function Index() {
       setActiveId(null);
     });
   };
+
+  const createConstellation = async () => {
+    if (activeStars.length < 3 || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await createConstellationFromStars(activeStars.map((s) => s.id));
+      setActiveStars([]);
+      await reloadArchive();
+      setTab("observe");
+    } catch (err) {
+      console.error(err);
+      setSaveError(
+        err instanceof Error ? err.message : "Could not save constellation.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canCreate = activeStars.length >= 3;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -91,17 +117,50 @@ function Index() {
         >
           <TabsList className="mx-auto grid w-full max-w-sm grid-cols-2 bg-zinc-900">
             <TabsTrigger value="input">Input Mode</TabsTrigger>
-            <TabsTrigger value="observe">Contemplation Mode</TabsTrigger>
+            <TabsTrigger value="observe">
+              Contemplation ({archive.length})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="input" className="pt-6">
-            <Recorder onSubmitted={handleSubmitted} />
+            <div className="relative mx-auto h-[60vh] min-h-[420px] w-full overflow-hidden rounded-lg border border-border/30 bg-black/40">
+              <ActiveSessionOverlay
+                stars={activeStars}
+                onPlay={playStar}
+                activeId={activeId}
+              />
+              <div className="relative z-10 flex h-full flex-col items-center justify-center">
+                <Recorder onSubmitted={handleSubmitted} />
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                {activeStars.length} star{activeStars.length === 1 ? "" : "s"} in
+                this session
+                {!canCreate && activeStars.length > 0
+                  ? ` · ${3 - activeStars.length} more to form a constellation`
+                  : ""}
+              </p>
+              <button
+                type="button"
+                onClick={createConstellation}
+                disabled={!canCreate || saving}
+                className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+              >
+                {saving ? "Saving…" : "Create Constellation"}
+              </button>
+              {saveError && (
+                <p className="text-xs text-red-300" role="status">
+                  {saveError}
+                </p>
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="observe" className="pt-6">
-            <Constellation stars={stars} onPlay={playStar} activeId={activeId} />
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              {stars.length} {stars.length === 1 ? "star" : "stars"} · click a
-              star to listen
-            </p>
+            <ConstellationArchive
+              constellations={archive}
+              onPlay={playStar}
+              activeStarId={activeId}
+            />
           </TabsContent>
         </Tabs>
 
