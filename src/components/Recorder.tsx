@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { WaveformCanvas } from "./WaveformCanvas";
 import {
   isRecordingSupported,
   uploadAndInsertStar,
   type RecordingMeta,
+  type StarRow,
 } from "@/lib/stars";
 
 type Phase = "idle" | "recording" | "preview" | "submitting";
 
 interface Props {
-  onSubmitted: () => void;
+  onSubmitted: (star: StarRow) => void;
 }
 
 function formatTime(s: number) {
@@ -180,14 +180,17 @@ export function Recorder({ onSubmitted }: Props) {
     setPhase("submitting");
     setMessage(null);
     try {
-      await uploadAndInsertStar(blobRef.current, metaRef.current);
+      const inserted = await uploadAndInsertStar(
+        blobRef.current,
+        metaRef.current,
+      );
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       blobRef.current = null;
       metaRef.current = null;
       setMessage("A star has been created.");
       setPhase("idle");
-      onSubmitted();
+      onSubmitted(inserted);
     } catch (err) {
       console.error(err);
       setMessage(err instanceof Error ? err.message : "Upload failed.");
@@ -239,18 +242,32 @@ export function Recorder({ onSubmitted }: Props) {
         <div className="flex w-full max-w-md flex-col items-center gap-3">
           <audio src={previewUrl} controls className="w-full" />
           <div className="flex gap-2">
-            <Button onClick={submit}>Submit</Button>
-            <Button variant="outline" onClick={discard}>
+            <button
+              type="button"
+              onClick={submit}
+              className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:opacity-60"
+            >
+              Submit
+            </button>
+            <button
+              type="button"
+              onClick={discard}
+              className="rounded-md border border-white/35 bg-transparent px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+            >
               Discard
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
       {phase === "recording" && (
-        <Button variant="outline" onClick={stopRecording}>
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="rounded-md border border-red-400/60 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 transition hover:bg-red-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+        >
           Stop
-        </Button>
+        </button>
       )}
 
       {message && (
