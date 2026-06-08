@@ -77,6 +77,27 @@ export function MaxDataPanel() {
           <code>max_audio_url</code> (WAV/AIFF) when present; otherwise{" "}
           <code>audio_url</code> (webm/opus).
         </p>
+        <div className="rounded border border-amber-300/30 bg-amber-300/5 p-3 text-xs text-amber-100/90">
+          <div className="mb-1 font-medium text-amber-200">Max / audio compatibility</div>
+          <ul className="list-disc space-y-1 pl-4">
+            <li>
+              <code>audio_url</code> is currently <code>audio/webm;codecs=opus</code>.
+              Max's <code>sfplay~</code> and <code>buffer~</code> do <em>not</em>
+              decode webm/opus natively — download the file, then transcode to
+              WAV/AIFF (e.g. via <code>ffmpeg -i in.webm out.wav</code>) before
+              loading into a buffer.
+            </li>
+            <li>
+              A Node-for-Max bridge can do the fetch + ffmpeg step on the fly
+              and hand a local <code>.wav</code> path to <code>buffer~</code>.
+            </li>
+            <li>
+              <code>max_audio_url</code> is reserved for a future server-side
+              WAV/AIFF render of each recording. When present, prefer it and
+              skip the transcode step entirely.
+            </li>
+          </ul>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );
