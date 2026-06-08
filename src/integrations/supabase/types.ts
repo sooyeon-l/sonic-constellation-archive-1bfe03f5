@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      stars: {
+        Row: {
+          audio_path: string
+          audio_url: string
+          color: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          max_audio_url: string | null
+          mime_type: string | null
+          question_text: string
+          volume_average: number | null
+          volume_peak: number | null
+          x_position: number
+          y_position: number
+        }
+        Insert: {
+          audio_path: string
+          audio_url: string
+          color: string
+          created_at?: string
+          duration_seconds: number
+          id?: string
+          max_audio_url?: string | null
+          mime_type?: string | null
+          question_text: string
+          volume_average?: number | null
+          volume_peak?: number | null
+          x_position: number
+          y_position: number
+        }
+        Update: {
+          audio_path?: string
+          audio_url?: string
+          color?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          max_audio_url?: string | null
+          mime_type?: string | null
+          question_text?: string
+          volume_average?: number | null
+          volume_peak?: number | null
+          x_position?: number
+          y_position?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
