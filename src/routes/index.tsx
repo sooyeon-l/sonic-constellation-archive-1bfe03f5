@@ -28,6 +28,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [stars, setStars] = useState<StarRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"input" | "observe">("input");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const reload = useCallback(async () => {
@@ -42,6 +43,17 @@ function Index() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  const handleSubmitted = (star: StarRow) => {
+    setStars((prev) => {
+      if (prev.some((s) => s.id === star.id)) return prev;
+      return [...prev, star].sort((a, b) =>
+        a.created_at.localeCompare(b.created_at),
+      );
+    });
+    setTab("observe");
+    reload();
+  };
 
   const playStar = (star: StarRow) => {
     const el = audioRef.current;
@@ -72,13 +84,17 @@ function Index() {
           </h1>
         </header>
 
-        <Tabs defaultValue="input" className="w-full">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as "input" | "observe")}
+          className="w-full"
+        >
           <TabsList className="mx-auto grid w-full max-w-sm grid-cols-2 bg-zinc-900">
             <TabsTrigger value="input">Input Mode</TabsTrigger>
             <TabsTrigger value="observe">Contemplation Mode</TabsTrigger>
           </TabsList>
           <TabsContent value="input" className="pt-6">
-            <Recorder onSubmitted={reload} />
+            <Recorder onSubmitted={handleSubmitted} />
           </TabsContent>
           <TabsContent value="observe" className="pt-6">
             <Constellation stars={stars} onPlay={playStar} activeId={activeId} />
