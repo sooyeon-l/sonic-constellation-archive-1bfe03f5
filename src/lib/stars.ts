@@ -28,6 +28,18 @@ export interface StarRow {
   y_position: number;
   color: string;
   created_at: string;
+  constellation_id: string | null;
+}
+
+export interface ConstellationRow {
+  id: string;
+  title: string;
+  question_text: string;
+  created_at: string;
+}
+
+export interface ConstellationWithStars extends ConstellationRow {
+  stars: StarRow[];
 }
 
 export interface RecordingMeta {
@@ -53,11 +65,64 @@ export async function fetchStars(): Promise<StarRow[]> {
   const { data, error } = await supabase
     .from("stars")
     .select(
-      "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at",
+      "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at, constellation_id",
     )
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as StarRow[];
+}
+
+export async function fetchConstellations(): Promise<ConstellationWithStars[]> {
+  const [{ data: cons, error: cErr }, { data: stars, error: sErr }] =
+    await Promise.all([
+      supabase
+        .from("constellations")
+        .select("id, title, question_text, created_at")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("stars")
+        .select(
+          "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at, constellation_id",
+        )
+        .not("constellation_id", "is", null)
+        .order("created_at", { ascending: true }),
+    ]);
+  if (cErr) throw cErr;
+  if (sErr) throw sErr;
+  const byCon = new Map<string, StarRow[]>();
+  for (const s of (stars ?? []) as StarRow[]) {
+    if (!s.constellation_id) continue;
+    const arr = byCon.get(s.constellation_id) ?? [];
+    arr.push(s);
+    byCon.set(s.constellation_id, arr);
+  }
+  return ((cons ?? []) as ConstellationRow[]).map((c) => ({
+    ...c,
+    stars: byCon.get(c.id) ?? [],
+  }));
+}
+
+export async function createConstellationFromStars(
+  starIds: string[],
+  title?: string,
+): Promise<ConstellationRow> {
+  if (starIds.length === 0) throw new Error("No stars to constellate.");
+  const finalTitle =
+    title?.trim() ||
+    `Constellation ${new Date().toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}`;
+  const { data: con, error: cErr } = await supabase
+    .from("constellations")
+    .insert({ title: finalTitle, question_text: QUESTION_TEXT })
+    .select()
+    .single();
+  if (cErr || !con) throw cErr ?? new Error("Failed to create constellation.");
+  const { error: uErr } = await supabase
+    .from("stars")
+    .update({ constellation_id: con.id })
+    .in("id", starIds)
+    .is("constellation_id", null);
+  if (uErr) throw uErr;
+  return con as ConstellationRow;
 }
 
 export async function uploadAndInsertStar(
