@@ -38,7 +38,7 @@ export const Route = createFileRoute(
         }
         try {
           return await api.transitionConstellation(params.id, "ready", {
-            synth_audio_url: parsed.data.synth_audio_url,
+            synth_audio_url: parsed.data.synth_audio_url ?? null,
             synth_audio_path: parsed.data.synth_audio_path,
             ready_at: new Date().toISOString(),
           });
