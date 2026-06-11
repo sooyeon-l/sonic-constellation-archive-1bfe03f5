@@ -390,7 +390,12 @@ export function createSketch(getProps: GetProps) {
       const parent = (p as unknown as { _userNode: HTMLElement })._userNode;
       const w = parent?.clientWidth || p.windowWidth;
       const h = parent?.clientHeight || p.windowHeight;
-      p.createCanvas(w, h);
+      const c = p.createCanvas(w, h);
+      // Wrapper is pointer-events: none so HTML overlays always win. The
+      // canvas itself opts back in so p5 can still receive star/cluster
+      // clicks in empty areas.
+      const canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
+      if (canvasEl) canvasEl.style.pointerEvents = "auto";
       p.colorMode(p.HSB, 360, 100, 100, 100);
       rebuildBgStars();
     };
