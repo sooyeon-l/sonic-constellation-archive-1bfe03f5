@@ -8,10 +8,14 @@ export interface SketchProps {
   activeStars: StarRow[];
   constellations: ConstellationWithStars[];
   selectedConstellationId: string | null;
+  /** Recorder anchor center in CSS px (input mode only). */
+  centerX?: number | null;
+  centerY?: number | null;
   onStarClick?: (starId: string) => void;
   onConstellationClick?: (id: string | null) => void;
   reducedMotion?: boolean;
 }
+
 
 type GetProps = () => SketchProps;
 
