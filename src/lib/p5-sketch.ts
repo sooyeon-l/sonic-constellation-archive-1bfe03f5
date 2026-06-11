@@ -102,10 +102,10 @@ export function createSketch(getProps: GetProps) {
       const seed2 = hash01(c.id + "y");
       const vis: ConstellationVis = {
         id: c.id,
-        cx: (0.12 + seed * 0.76) * p.width,
-        cy: (0.18 + seed2 * 0.64) * p.height,
-        vx: (seed - 0.5) * 0.25,
-        vy: (seed2 - 0.5) * 0.25,
+        cx: (0.25 + seed * 0.50) * p.width,
+        cy: (0.28 + seed2 * 0.44) * p.height,
+        vx: (seed - 0.5) * 0.2,
+        vy: (seed2 - 0.5) * 0.2,
         expansion: 0,
         starOffsets: c.stars.map((s) => ({
           id: s.id,
