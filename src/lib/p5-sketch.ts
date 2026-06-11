@@ -13,6 +13,7 @@ export interface SketchProps {
   centerY?: number | null;
   onStarClick?: (starId: string) => void;
   onConstellationClick?: (id: string | null) => void;
+  onHoverChange?: (hover: { id: string; x: number; y: number } | null) => void;
   reducedMotion?: boolean;
 }
 
