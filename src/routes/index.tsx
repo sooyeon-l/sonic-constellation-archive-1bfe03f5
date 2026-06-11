@@ -43,9 +43,11 @@ function Index() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<"input" | "observe">("input");
   const [saving, setSaving] = useState(false);
+  const [forming, setForming] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showMaxPanel, setShowMaxPanel] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
   const reloadArchive = useCallback(async () => {
     try {
