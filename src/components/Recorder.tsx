@@ -43,7 +43,7 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   const blobRef = useRef<Blob | null>(null);
   const metaRef = useRef<RecordingMeta | null>(null);
 
-  const [analyserState, setAnalyserState] = useState<AnalyserNode | null>(null);
+  
 
   useEffect(() => {
     setSupported(isRecordingSupported());
@@ -67,7 +67,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
       audioCtxRef.current = null;
     }
     analyserRef.current = null;
-    setAnalyserState(null);
   };
 
   useEffect(() => () => cleanup(), []);
@@ -97,7 +96,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
       analyser.fftSize = 1024;
       src.connect(analyser);
       analyserRef.current = analyser;
-      setAnalyserState(analyser);
 
       const buf = new Uint8Array(analyser.fftSize);
       const tick = () => {
