@@ -22,8 +22,10 @@ export const Route = createFileRoute(
         try {
           if (contentType.includes("multipart/form-data")) {
             const form = await request.formData();
-            const file = form.get("file");
-            if (!(file instanceof File) && !(file instanceof Blob)) {
+            const file = form.get("file") as unknown as
+              | { arrayBuffer: () => Promise<ArrayBuffer> }
+              | null;
+            if (!file || typeof file.arrayBuffer !== "function") {
               return api.json(
                 { error: "Missing 'file' field in multipart body" },
                 400,
