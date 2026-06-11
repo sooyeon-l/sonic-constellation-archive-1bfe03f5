@@ -287,16 +287,6 @@ function Index() {
               </div>
 
               <div className="pointer-events-auto mt-2 flex flex-col items-center gap-2">
-              <div className="pointer-events-auto">
-                <Recorder
-                  anchorRef={recorderAnchorRef}
-                  onSubmitted={handleSubmitted}
-                  disabled={sessionFull}
-                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
-                />
-              </div>
-
-              <div className="pointer-events-auto flex flex-col items-center gap-2">
                 <p className="text-xs text-muted-foreground">
                   {activeStars.length === 0
                     ? `Create a constellation after ${MIN_CONSTELLATION_STARS} stars`
