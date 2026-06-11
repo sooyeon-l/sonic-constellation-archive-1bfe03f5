@@ -1,130 +1,88 @@
+# Max 9 Synthesis Worker Architecture (revised)
 
-## Goal
+Polling-based round trip: website creates a pending constellation → Max fetches it → marks it synthesizing → uploads a WAV and marks it ready → website plays the synthesized audio.
 
-A single-page app where visitors record a voice answer to one shared question. While recording, a central circle wobbles to mic volume. Submissions upload audio to Supabase Storage, save metadata to `stars`, and appear as glowing dots connected by a chronological polyline. Stars are clickable for playback. The same data is exposed as JSON for Max 9.
+## 1. Storage: stable public URLs + scoped policies
 
-## Architecture decisions
+- Flip the `star-audio` bucket to **public read** so audio gets permanent, non-expiring URLs.
+- Switch `uploadAndInsertStar` from `createSignedUrl` to `getPublicUrl` — stable URL, no token.
+- Keep browser recordings as webm/opus; `max_audio_url` stays nullable for future WAV/AIFF star files.
+- Synthesized audio lives at `star-audio/synthesized/{constellationId}.wav`.
 
-- **Recording**: `MediaRecorder` (audio/webm; opus). This is the file uploaded to Supabase.
-- **Feature detection**: On mount, check `navigator.mediaDevices?.getUserMedia` and `window.MediaRecorder`. If either is missing, replace the record UI with: "Voice recording is not supported on this browser. Please try Chrome or Safari updated to the latest version."
-- **No early mic access**: `getUserMedia` is only invoked when the user taps the record button. No mic prompt on page load.
-- **Visualization**: Web Audio `AnalyserNode` fed by the same `MediaStream` as `MediaRecorder`. Rendered on a plain `<canvas>` with `requestAnimationFrame`. Lighter than pulling in p5.js; the wobble math from the reference sketch translates directly.
-- **Smoothing**: `smoothed = smoothed * 0.92 + level * 0.08` (per the reference). Wave power scales ring radius and per-vertex jitter.
-- **Constellation view**: an SVG sized to fill the viewport area in Contemplation Mode, containing a `<polyline>` through every star in chronological order plus a `<circle>` per star.
-- **Client-side UUID**: `crypto.randomUUID()` generates the id used both as the storage filename and as the `stars.id` insert.
-- **Single shared `<audio>` element**: mounted once on the page. Clicking a star → `audio.pause()`, `audio.src = star.audio_url`, `audio.play()`. Previous playback is always stopped first.
-- **Storage**: Supabase Storage bucket `star-audio` (public). Upload path `recordings/${uuid}.webm`.
-- **Backend**: Lovable Cloud (Supabase). No auth. Browser client does upload + insert + ordered select. Public JSON endpoints use `supabaseAdmin` in TanStack server routes.
+**Storage policies (documented exactly):**
+- Existing upload policy for browser recordings stays as-is (insert into `recordings/` continues to work unchanged).
+- Add one narrow insert policy for Max: `anon`/`authenticated` may upload **only** to the `synthesized/` folder of `star-audio`, restricted to that path prefix — nothing wider. Node-for-Max uploads with the Supabase JS client + anon key.
+- No public update/delete policies — uploads only.
+- I'll list the final policy SQL in the implementation notes so you can see precisely what's allowed.
 
-## UI / flow
+⚠️ Your workspace previously blocked public buckets. I'll attempt the flip; if rejected, you'll need to enable public buckets in workspace Settings → Privacy & Security, and I'll flag it clearly.
 
-One route `/` with a dark full-bleed layout:
+## 2. Database migration — `constellations` table
 
-1. **Header**: app title + the shared question (hardcoded constant).
-2. **Mode tabs**: `Input Mode` (default) / `Contemplation Mode`.
-3. **Input Mode**:
-   - Central circular record button on top of a `<canvas>` waveform.
-   - Idle: solid ring, label "Tap to record".
-   - Recording: animated wobbling ring driven by smoothed mic level; timer `MM:SS`; click again (or Stop button) to finish.
-   - After stop: preview `<audio>`, "Submit" + "Discard" buttons.
-   - Submitting: disabled state.
-   - After upload: inline "A star has been created." then return to idle and refetch stars.
-   - If unsupported: clear message instead of the record button.
-4. **Contemplation Mode**:
-   - SVG sized to the viewport area; renders a chronological `<polyline>` plus one glowing `<circle>` per star.
-   - Each star: click → shared `<audio>` stops previous, swaps `src`, plays new.
-5. **Max Data panel** (collapsible, bottom):
-   - Shows endpoint URLs and a compact example JSON payload.
-   - Copy buttons for URLs.
+Add:
+- `status` text not null default `pending_synthesis`, constrained to `pending_synthesis | synthesizing | ready | failed`
+- `synthesis_params` jsonb, `mood_params` jsonb
+- `synth_audio_url`, `synth_audio_path`, `error_message` (nullable text)
+- `ready_at` timestamptz nullable
 
-Fetch order: `select(...).order('created_at', { ascending: true })` so the polyline is stable.
+`stars` already has every required column (verified). Status changes happen only through server endpoints (admin client) — no new client update policies.
 
-Validation before submit:
-- `blob.type` starts with `audio/`.
-- `duration_seconds` between 0.5 and 120.
-- `blob.size` ≤ 10 MB.
+## 3. API endpoints (raw JSON, never the HTML shell)
 
-Random per-star fields generated on submit:
-- `x_position`, `y_position`: random in `[0.05, 0.95]`.
-- `color`: pick from a small preset palette (warm/cool stars).
-- `id`: `crypto.randomUUID()` — used for both the storage filename and the row id.
+All return `Content-Type: application/json` + CORS headers (`Access-Control-Allow-Origin: *`, allow `Content-Type, X-Max-Worker-Secret`), with OPTIONS preflight handlers on the POST routes.
 
-## Supabase SQL (migration)
+**Public GET endpoints (no auth):**
+| Endpoint | Behavior |
+|---|---|
+| `GET /api/public/constellations` | All constellations + nested stars |
+| `GET /api/public/constellations/pending` | Only `pending_synthesis`, + nested stars |
+| `GET /api/public/constellations/:id` | One constellation + nested stars |
+| `GET /api/public/stars/latest` | (already exists) |
 
-```sql
-create table public.stars (
-  id uuid primary key default gen_random_uuid(),
-  question_text text not null,
-  audio_url text not null,
-  audio_path text not null,
-  max_audio_url text,
-  mime_type text,
-  duration_seconds numeric not null,
-  volume_peak numeric,
-  volume_average numeric,
-  x_position numeric not null,
-  y_position numeric not null,
-  color text not null,
-  created_at timestamptz not null default now()
-);
+**Protected POST endpoints — require `X-Max-Worker-Secret` header:**
+| Endpoint | Behavior |
+|---|---|
+| `POST .../:id/mark-synthesizing` | `pending_synthesis → synthesizing` |
+| `POST .../:id/mark-ready` | `synthesizing → ready`; Zod-validated body `{ synth_audio_url, synth_audio_path }`; sets `ready_at = now()` |
+| `POST .../:id/mark-failed` | `synthesizing → failed`; Zod-validated body `{ error_message }` |
 
-grant select, insert on public.stars to anon, authenticated;
-grant all on public.stars to service_role;
+**Auth:** header compared (timing-safe) against `MAX_WORKER_SECRET` env var. Missing/wrong → `401 {"error":"Unauthorized Max worker request"}`. I'll prompt you to set the secret value via the secure secrets form — it's never shown in the UI or code.
 
-alter table public.stars enable row level security;
+**State guards (strict):** invalid transition → `409` JSON with current status. Prevents two Max workers double-claiming the same constellation.
 
-create policy "anyone can read stars"
-  on public.stars for select to anon, authenticated using (true);
+**Route ordering:** static `pending` file resolves before dynamic `$id` (TanStack static-over-dynamic precedence) — I'll verify this with a live request after implementation.
 
-create policy "anyone can insert stars"
-  on public.stars for insert to anon, authenticated with check (true);
+## 4. Create Constellation flow
 
-create index stars_created_at_idx on public.stars (created_at);
-```
+- Min 3 / max 7 stars; recorder disabled at 7 with "constellation full — create or reset" message.
+- On create: insert constellation row (status defaults `pending_synthesis`), fallback timestamp title, generate `synthesis_params` (per-star duration/peak/average/x/y/color → pitch/pan/gain mapping) and `mood_params` (aggregates: mean volume, density, total duration, palette), assign `constellation_id` to stars, clear active stars, switch to Contemplation Mode.
 
-## Storage bucket + policies
+## 5. Contemplation Mode UI
 
-Bucket `star-audio` is created via the storage tool with `public = true`. Policies on `storage.objects`:
+- Status badges: "Waiting for Max synthesis" / "Max is synthesizing" / "Synthesized sound ready" / "Synthesis failed" (+ error message).
+- "Play Synthesized Constellation" only when `status = ready` **and** `synth_audio_url` exists.
+- Individual stars always remain playable.
+- ~10s polling while any constellation is pending/synthesizing so badges update live.
 
-```sql
-create policy "public read star-audio"
-  on storage.objects for select
-  to anon, authenticated
-  using (bucket_id = 'star-audio');
+## 6. Max Integration panel
 
-create policy "public upload star-audio"
-  on storage.objects for insert
-  to anon, authenticated
-  with check (bucket_id = 'star-audio');
-```
+- Endpoint list + copy buttons: `/api/public/constellations/pending`, `/api/public/constellations`, `/api/public/stars/latest`.
+- Latest pending constellation JSON preview.
+- Health checks: fetch each GET endpoint, ✓/✗ for "returns JSON" (catches the HTML-shell failure).
+- Warnings: `?token=` in audio_url → "signed/temporary URL"; ready constellation missing `synth_audio_url`.
+- Clear note: **"POST status endpoints require the `X-Max-Worker-Secret` header"** — secret value never displayed.
+- Max workflow note: poll pending → mark-synthesizing → render WAV → upload to `synthesized/{id}.wav` → POST mark-ready.
 
-(No update/delete policies — demo is append-only.)
+## 7. Post-implementation test cycle
 
-## Files to create / modify
-
-- `src/routes/index.tsx` — page shell, tabs, question header, Max panel, shared `<audio>` element.
-- `src/components/Recorder.tsx` — record button, timer, preview, submit (MediaRecorder + Web Audio + feature detection).
-- `src/components/WaveformCanvas.tsx` — canvas wobble visualization driven by an `AnalyserNode`.
-- `src/components/Constellation.tsx` — SVG covering the viewport area: chronological polyline + clickable stars.
-- `src/components/MaxDataPanel.tsx` — endpoint URLs + example JSON.
-- `src/lib/stars.ts` — palette, random position, blob → metadata, `crypto.randomUUID()`-based upload + insert.
-- `src/routes/api/public/stars.ts` — `GET` all stars (selected columns), ordered by `created_at` asc, as JSON.
-- `src/routes/api/public/stars.latest.ts` — `GET` newest star as JSON.
-
-## How Max 9 uses this
-
-Max polls `https://<project>.lovable.app/api/public/stars` using a Max HTTP/network object (e.g. `[maxurl]`, `[jweb]`) or a small Node-for-Max bridge. For the prototype, the website only guarantees a clean JSON endpoint and stable audio URLs — anything beyond that lives in the Max patch.
-
-For each star Max can:
-
-- Download/cache audio locally first, then load into Max playback objects such as `sfplay~` or `buffer~`/`groove~`. Prefer `max_audio_url` (WAV/AIFF) when present, otherwise `audio_url` (webm/opus).
-- Use `x_position` / `y_position` to spatialize (panning, ambisonics).
-- Use `duration_seconds` for sequencing or buffer length.
-- Use `volume_peak` / `volume_average` for normalization or filter modulation.
-- Poll `/api/public/stars/latest` and compare `id` to detect new arrivals.
-
-Max doesn't depend on the UI — only the JSON endpoints. `max_audio_url` stays nullable so a future job can populate WAV/AIFF without schema changes.
+1. Verify all four GET endpoints return raw JSON (not `<!DOCTYPE html>`), including `/pending` resolving before `:id`.
+2. Insert 3 test stars, create a constellation, confirm it appears at `/pending`.
+3. Call mark-synthesizing with the secret header → website shows "Max is synthesizing".
+4. Call mark-synthesizing again → confirm 409.
+5. Call mark-ready with a test WAV URL → website shows "Play Synthesized Constellation".
+6. Confirm the synthesized audio URL plays; confirm wrong/missing secret returns the 401 JSON.
+7. Clean up test data.
 
 ## Out of scope
 
-Auth, deletion, moderation, realtime push, server-side audio conversion, OSC bridge, transcription.
+No WebSocket, OSC, realtime push, or Jitter — polling only.
