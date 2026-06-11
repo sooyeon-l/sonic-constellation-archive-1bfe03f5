@@ -313,8 +313,6 @@ export function createSketch(getProps: GetProps) {
     function drawConstellations() {
       const reduced = getProps().reducedMotion;
       const selectedId = getProps().selectedConstellationId;
-      const dim = (a: number) =>
-        selectedId && selectedId !== "__never__" ? a * 0.35 : a;
       for (const v of constellationMap.values()) {
         const pad = Math.min(p.width, p.height) * 0.18;
         if (!reduced && selectedId !== v.id) {
