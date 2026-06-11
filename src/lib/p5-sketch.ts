@@ -379,7 +379,7 @@ export function createSketch(getProps: GetProps) {
       }
       for (const v of constellationMap.values()) {
         const { cx, cy, scale } = getConstellationDrawInfo(v);
-        if (p.dist(mx, my, cx, cy) < Math.max(40, scale * 1.1)) {
+        if (p.dist(mx, my, cx, cy) < Math.max(60, scale * 0.9)) {
           return { starId: null as string | null, constellationId: v.id };
         }
       }
