@@ -445,7 +445,7 @@ export function createSketch(getProps: GetProps) {
       // Wrapper is pointer-events: none so HTML overlays always win. The
       // canvas itself opts back in so p5 can still receive star/cluster
       // clicks in empty areas.
-      const canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
+      canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
       if (canvasEl) canvasEl.style.pointerEvents = "auto";
       p.colorMode(p.HSB, 360, 100, 100, 100);
       rebuildBgStars();
@@ -473,6 +473,41 @@ export function createSketch(getProps: GetProps) {
       }
     };
 
+    function clearHover() {
+      if (hoveredId !== null) {
+        hoveredId = null;
+        if (canvasEl) canvasEl.style.cursor = "default";
+        getProps().onHoverChange?.(null);
+      }
+    }
+
+    p.mouseMoved = (event?: MouseEvent | PointerEvent) => {
+      const props = getProps();
+      if (props.mode !== "observe") {
+        clearHover();
+        return;
+      }
+      const target = (event?.target as HTMLElement | null) ?? null;
+      if (target && target.closest('[data-html-overlay="true"]')) {
+        clearHover();
+        return;
+      }
+      const mx = p.mouseX;
+      const my = p.mouseY;
+      if (mx < 0 || my < 0 || mx > p.width || my > p.height) {
+        clearHover();
+        return;
+      }
+      const hit = pickConstellation(mx, my);
+      if (!hit) {
+        clearHover();
+        return;
+      }
+      hoveredId = hit.id;
+      if (canvasEl) canvasEl.style.cursor = "pointer";
+      props.onHoverChange?.({ id: hit.id, x: mx, y: my });
+    };
+
     p.mousePressed = (event?: MouseEvent | PointerEvent) => {
       const target = (event?.target as HTMLElement | null) ?? null;
       if (target && target.closest('[data-html-overlay="true"]')) return;
@@ -486,19 +521,21 @@ export function createSketch(getProps: GetProps) {
         if (sid && props.onStarClick) props.onStarClick(sid);
         return;
       }
-      const hit = hitTestConstellation(mx, my);
-      if (hit.starId && props.onStarClick) {
-        props.onStarClick(hit.starId);
+      const starHit = hitTestSelectedStar(mx, my);
+      if (starHit && props.onStarClick) {
+        props.onStarClick(starHit);
         return;
       }
-      if (hit.constellationId && props.onConstellationClick) {
-        props.onConstellationClick(hit.constellationId);
+      const hit = pickConstellation(mx, my);
+      if (hit && props.onConstellationClick) {
+        props.onConstellationClick(hit.id);
         return;
       }
       if (props.selectedConstellationId && props.onConstellationClick) {
         props.onConstellationClick(null);
       }
     };
+
 
     (p as unknown as { __resize: (w: number, h: number) => void }).__resize = (
       w: number,
