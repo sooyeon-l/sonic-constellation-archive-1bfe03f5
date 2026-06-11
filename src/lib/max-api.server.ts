@@ -95,7 +95,7 @@ export async function fetchConstellationsWithStars(filter?: {
 }
 
 interface TransitionPatch {
-  synth_audio_url?: string;
+  synth_audio_url?: string | null;
   synth_audio_path?: string;
   ready_at?: string;
   error_message?: string;
