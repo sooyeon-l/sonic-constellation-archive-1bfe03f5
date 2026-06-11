@@ -282,13 +282,16 @@ function Index() {
                   : ""
               }`}
             >
-              <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
-                <Recorder
-                  onSubmitted={handleSubmitted}
-                  disabled={sessionFull}
-                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
-                />
+              <div className="pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                <div ref={recorderAnchorRef}>
+                  <Recorder
+                    onSubmitted={handleSubmitted}
+                    disabled={sessionFull}
+                    disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+                  />
+                </div>
               </div>
+
             </div>
             <div className="pointer-events-auto mt-4 flex flex-col items-center gap-2">
               <p className="text-xs text-muted-foreground">
