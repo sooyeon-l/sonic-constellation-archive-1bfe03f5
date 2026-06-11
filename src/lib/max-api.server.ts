@@ -56,7 +56,7 @@ const CONSTELLATION_COLUMNS =
   "id, title, question_text, status, synthesis_params, mood_params, synth_audio_url, synth_audio_path, error_message, created_at, ready_at";
 
 const STAR_COLUMNS =
-  "id, constellation_id, audio_url, max_audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at";
+  "id, constellation_id, audio_url, max_audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, radial_distance, angle, color, created_at";
 
 interface StarRecord {
   constellation_id: string | null;
