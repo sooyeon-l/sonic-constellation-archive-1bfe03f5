@@ -185,7 +185,7 @@ export function buildMoodParams(stars: StarRow[]) {
 export async function createConstellationFromStars(
   stars: StarRow[],
   title?: string,
-): Promise<ConstellationRow> {
+): Promise<ConstellationWithStars> {
   if (stars.length < MIN_CONSTELLATION_STARS) {
     throw new Error(
       `At least ${MIN_CONSTELLATION_STARS} stars are needed to form a constellation.`,
@@ -196,31 +196,27 @@ export async function createConstellationFromStars(
       `A constellation can hold at most ${MAX_CONSTELLATION_STARS} stars.`,
     );
   }
-  const finalTitle =
-    title?.trim() ||
-    `Constellation ${new Date().toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}`;
-  const { data: con, error: cErr } = await supabase
-    .from("constellations")
-    .insert({
-      title: finalTitle,
-      question_text: QUESTION_TEXT,
-      status: "pending_synthesis",
-      synthesis_params: buildSynthesisParams(stars),
-      mood_params: buildMoodParams(stars),
-    })
-    .select(CONSTELLATION_COLUMNS)
-    .single();
-  if (cErr || !con) throw cErr ?? new Error("Failed to create constellation.");
-  const { error: uErr } = await supabase
-    .from("stars")
-    .update({ constellation_id: con.id })
-    .in(
-      "id",
-      stars.map((s) => s.id),
-    )
-    .is("constellation_id", null);
-  if (uErr) throw uErr;
-  return con as unknown as ConstellationRow;
+  const res = await fetch("/api/public/constellations/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      star_ids: stars.map((s) => s.id),
+      title: title?.trim() || undefined,
+    }),
+  });
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch {
+    /* noop */
+  }
+  if (!res.ok) {
+    const msg =
+      (payload as { error?: string } | null)?.error ??
+      `Failed to create constellation (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
+  return payload as ConstellationWithStars;
 }
 
 export async function uploadAndInsertStar(
