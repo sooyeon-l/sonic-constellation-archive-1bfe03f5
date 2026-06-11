@@ -13,6 +13,7 @@ interface Props {
   onSubmitted: (star: StarRow) => void;
   disabled?: boolean;
   disabledMessage?: string;
+  anchorRef?: React.Ref<HTMLDivElement>;
 }
 
 function formatTime(s: number) {
