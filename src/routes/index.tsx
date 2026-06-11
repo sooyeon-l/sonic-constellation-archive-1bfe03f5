@@ -421,9 +421,7 @@ function Index() {
                     <p className="mt-1 text-xs text-zinc-400">
                       {selectedConstellation.stars.length} star
                       {selectedConstellation.stars.length === 1 ? "" : "s"} ·{" "}
-                      {new Date(
-                        selectedConstellation.created_at,
-                      ).toLocaleDateString()}
+                      {formatKST(selectedConstellation.created_at)}
                     </p>
                     <p
                       className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${
