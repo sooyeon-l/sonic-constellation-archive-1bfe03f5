@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { WaveformCanvas } from "./WaveformCanvas";
+import { useMicLevel } from "@/lib/mic-level-context";
 import {
   isRecordingSupported,
   uploadAndInsertStar,
