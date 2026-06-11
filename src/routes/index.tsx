@@ -226,13 +226,28 @@ function Index() {
 
   // Clear selection when switching tabs.
   useEffect(() => {
-    if (tab !== "observe") setSelectedConstellationId(null);
+    if (tab !== "observe") {
+      setSelectedConstellationId(null);
+      setHoverInfo(null);
+    }
   }, [tab]);
 
   const selectedConstellation = useMemo(
     () => archive.find((c) => c.id === selectedConstellationId) ?? null,
     [archive, selectedConstellationId],
   );
+
+  const hoveredConstellation = useMemo(
+    () => (hoverInfo ? archive.find((c) => c.id === hoverInfo.id) ?? null : null),
+    [hoverInfo, archive],
+  );
+
+  const showTooltip =
+    tab === "observe" &&
+    hoverInfo &&
+    hoveredConstellation &&
+    hoveredConstellation.id !== selectedConstellationId;
+
 
   return (
     <div className="relative min-h-dvh bg-zinc-950 text-zinc-100">
