@@ -273,26 +273,22 @@ export async function uploadAndInsertStar(
   const { error: upErr } = await supabase.storage
     .from("star-audio")
     .upload(path, blob, { contentType: meta.mimeType, upsert: false });
-  if (upErr) throw upErr;
-
-  // Stable public URL (no token, never expires). Requires the star-audio
-  // bucket to be public. If the workspace still blocks public buckets, the
-  // public URL won't resolve, so fall back to a long-lived signed URL until
-  // public buckets are enabled (the Max panel warns when this happens).
-  const { data: pub } = supabase.storage
-    .from("star-audio")
-    .getPublicUrl(path);
-  let audioUrl = pub.publicUrl;
-  try {
-    const head = await fetch(audioUrl, { method: "HEAD" });
-    if (!head.ok) throw new Error("public URL not accessible");
-  } catch {
-    const { data: signed, error: signErr } = await supabase.storage
-      .from("star-audio")
-      .createSignedUrl(path, 60 * 60 * 24 * 365);
-    if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
-    audioUrl = signed.signedUrl;
+  if (upErr) {
+    console.error("star-audio upload failed", upErr);
+    throw new Error("Upload failed, please retry.");
   }
+
+  // Bucket is private — sign the just-uploaded object for playback.
+  const { data: signed, error: signErr } = await supabase.storage
+    .from("star-audio")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (signErr || !signed) {
+    console.error("star-audio sign failed", signErr);
+    await supabase.storage.from("star-audio").remove([path]).catch(() => undefined);
+    throw new Error("Upload failed, please retry.");
+  }
+  const audioUrl = signed.signedUrl;
+
 
   console.log("audio meta for placement", meta);
   const pos = radialPositionFromVolume(meta.volumeAverage);
