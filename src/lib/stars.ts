@@ -42,10 +42,13 @@ export interface StarRow {
   volume_average: number | null;
   x_position: number;
   y_position: number;
+  radial_distance: number | null;
+  angle: number | null;
   color: string;
   created_at: string;
   constellation_id: string | null;
 }
+
 
 export interface ConstellationRow {
   id: string;
