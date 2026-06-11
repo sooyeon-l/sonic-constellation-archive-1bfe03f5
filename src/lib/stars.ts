@@ -79,6 +79,24 @@ export function randomColor() {
   return STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
 }
 
+function clamp01(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
+}
+
+/**
+ * Map recording average volume to a radial position around the canvas center,
+ * matching the p5 prototype: louder = farther from center.
+ */
+export function radialPositionFromVolume(volumeAverage: number | null) {
+  const expectedMax = 0.35;
+  const normVol = clamp01((volumeAverage ?? 0) / expectedMax, 0, 1);
+  const radialDistance = 0.12 + normVol * 0.30; // 0.12 .. 0.42 of canvas half-size
+  const angle = Math.random() * Math.PI * 2;
+  const x = clamp01(0.5 + Math.cos(angle) * radialDistance, 0.05, 0.95);
+  const y = clamp01(0.5 + Math.sin(angle) * radialDistance, 0.05, 0.95);
+  return { x, y, radialDistance, angle };
+}
+
 export function randomPosition() {
   const pad = 0.08;
   return {
@@ -86,6 +104,7 @@ export function randomPosition() {
     y: pad + Math.random() * (1 - pad * 2),
   };
 }
+
 
 const CONSTELLATION_COLUMNS =
   "id, title, question_text, status, synthesis_params, mood_params, synth_audio_url, synth_audio_path, error_message, created_at, ready_at";
