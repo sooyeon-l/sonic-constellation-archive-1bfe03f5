@@ -310,8 +310,8 @@ export function createSketch(getProps: GetProps) {
       const target = getProps().selectedConstellationId === v.id ? 1 : 0;
       v.expansion += (target - v.expansion) * 0.08;
       const minDim = Math.min(p.width, p.height);
-      const baseScale = minDim * 0.22;
-      const expandedScale = minDim * 0.55;
+      const baseScale = minDim * 0.10;
+      const expandedScale = minDim * 0.32;
       const scale = p.lerp(baseScale, expandedScale, v.expansion);
       const tcx = p.width / 2;
       const tcy = p.height / 2;
@@ -323,25 +323,33 @@ export function createSketch(getProps: GetProps) {
     function drawConstellations() {
       const reduced = getProps().reducedMotion;
       const selectedId = getProps().selectedConstellationId;
+      const minDim = Math.min(p.width, p.height);
+      const baseScale = minDim * 0.10;
+      const pad = minDim * 0.08 + baseScale;
       for (const v of constellationMap.values()) {
-        const pad = Math.min(p.width, p.height) * 0.18;
         if (!reduced && selectedId !== v.id) {
           v.cx += v.vx;
           v.cy += v.vy;
           if (v.cx < pad || v.cx > p.width - pad) v.vx *= -1;
           if (v.cy < pad || v.cy > p.height - pad) v.vy *= -1;
+          v.cx = Math.min(p.width - pad, Math.max(pad, v.cx));
+          v.cy = Math.min(p.height - pad, Math.max(pad, v.cy));
         }
         const { cx, cy, scale } = getConstellationDrawInfo(v);
         const isSelected = selectedId === v.id;
-        const alphaMul = isSelected || !selectedId ? 1 : 0.35;
+        const alphaMul = !selectedId ? 1 : isSelected ? 1 : 0.3;
 
         p.push();
         p.noFill();
-        p.stroke(45, 70, 100, (isSelected ? 90 : 55) * alphaMul);
+        p.stroke(45, 70, 100, (isSelected ? 95 : 60) * alphaMul);
         p.strokeWeight(isSelected ? 1.8 : 1.2);
         p.beginShape();
         for (const off of v.starOffsets) {
           p.vertex(cx + off.dx * scale, cy + off.dy * scale);
+        }
+        if (v.starOffsets.length > 2) {
+          const first = v.starOffsets[0];
+          p.vertex(cx + first.dx * scale, cy + first.dy * scale);
         }
         p.endShape();
         p.pop();
@@ -350,17 +358,16 @@ export function createSketch(getProps: GetProps) {
           const x = cx + off.dx * scale;
           const y = cy + off.dy * scale;
           const halo = p.color(off.color);
-          halo.setAlpha((isSelected ? 80 : 50) * alphaMul);
+          halo.setAlpha((isSelected ? 85 : 55) * alphaMul);
           p.noStroke();
           p.fill(halo);
-          p.ellipse(x, y, isSelected ? 32 : 20);
+          p.ellipse(x, y, isSelected ? 36 : 22);
           const core = p.color(off.color);
           core.setAlpha(240 * alphaMul);
           p.fill(core);
-          p.ellipse(x, y, isSelected ? 9 : 5);
+          p.ellipse(x, y, isSelected ? 10 : 6);
         }
       }
-      
     }
 
     function hitTestActiveStar(mx: number, my: number): string | null {
@@ -380,14 +387,14 @@ export function createSketch(getProps: GetProps) {
           for (const off of v.starOffsets) {
             const x = cx + off.dx * scale;
             const y = cy + off.dy * scale;
-            if (p.dist(mx, my, x, y) < 18)
+            if (p.dist(mx, my, x, y) < 22)
               return { starId: off.id, constellationId: null as string | null };
           }
         }
       }
       for (const v of constellationMap.values()) {
         const { cx, cy, scale } = getConstellationDrawInfo(v);
-        if (p.dist(mx, my, cx, cy) < Math.max(60, scale * 0.9)) {
+        if (p.dist(mx, my, cx, cy) < scale * 1.1) {
           return { starId: null as string | null, constellationId: v.id };
         }
       }
