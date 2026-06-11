@@ -58,6 +58,7 @@ export type Database = {
       }
       stars: {
         Row: {
+          angle: number | null
           audio_path: string
           audio_url: string
           color: string
@@ -68,12 +69,14 @@ export type Database = {
           max_audio_url: string | null
           mime_type: string | null
           question_text: string
+          radial_distance: number | null
           volume_average: number | null
           volume_peak: number | null
           x_position: number
           y_position: number
         }
         Insert: {
+          angle?: number | null
           audio_path: string
           audio_url: string
           color: string
@@ -84,12 +87,14 @@ export type Database = {
           max_audio_url?: string | null
           mime_type?: string | null
           question_text: string
+          radial_distance?: number | null
           volume_average?: number | null
           volume_peak?: number | null
           x_position: number
           y_position: number
         }
         Update: {
+          angle?: number | null
           audio_path?: string
           audio_url?: string
           color?: string
@@ -100,6 +105,7 @@ export type Database = {
           max_audio_url?: string | null
           mime_type?: string | null
           question_text?: string
+          radial_distance?: number | null
           volume_average?: number | null
           volume_peak?: number | null
           x_position?: number

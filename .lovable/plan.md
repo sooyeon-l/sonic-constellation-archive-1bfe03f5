@@ -1,88 +1,97 @@
-# Max 9 Synthesis Worker Architecture (revised)
 
-Polling-based round trip: website creates a pending constellation → Max fetches it → marks it synthesizing → uploads a WAV and marks it ready → website plays the synthesized audio.
+## Goal
 
-## 1. Storage: stable public URLs + scoped policies
+Keep all existing controls, layout, recording flow, Supabase backend, server routes, and Max-worker architecture intact. Only upgrade the visual/animation layer to match the p5 prototype's feel: mic-reactive wobble, drifting background stars, star "fly out from center" creation, volume-based radial placement, hovering stars, animated constellation formation, and drifting/expanding constellations in Contemplation Mode.
 
-- Flip the `star-audio` bucket to **public read** so audio gets permanent, non-expiring URLs.
-- Switch `uploadAndInsertStar` from `createSignedUrl` to `getPublicUrl` — stable URL, no token.
-- Keep browser recordings as webm/opus; `max_audio_url` stays nullable for future WAV/AIFF star files.
-- Synthesized audio lives at `star-audio/synthesized/{constellationId}.wav`.
+No new networking, no localhost sockets, no local Node server, no p5 dependency. All visuals will be rendered with the canvas/SVG components we already use.
 
-**Storage policies (documented exactly):**
-- Existing upload policy for browser recordings stays as-is (insert into `recordings/` continues to work unchanged).
-- Add one narrow insert policy for Max: `anon`/`authenticated` may upload **only** to the `synthesized/` folder of `star-audio`, restricted to that path prefix — nothing wider. Node-for-Max uploads with the Supabase JS client + anon key.
-- No public update/delete policies — uploads only.
-- I'll list the final policy SQL in the implementation notes so you can see precisely what's allowed.
+---
 
-⚠️ Your workspace previously blocked public buckets. I'll attempt the flip; if rejected, you'll need to enable public buckets in workspace Settings → Privacy & Security, and I'll flag it clearly.
+## 1. Background star field (new)
 
-## 2. Database migration — `constellations` table
+New component `src/components/StarField.tsx` rendered once inside the page background (behind the tabs/cards on `/`).
 
-Add:
-- `status` text not null default `pending_synthesis`, constrained to `pending_synthesis | synthesizing | ready | failed`
-- `synthesis_params` jsonb, `mood_params` jsonb
-- `synth_audio_url`, `synth_audio_path`, `error_message` (nullable text)
-- `ready_at` timestamptz nullable
+- Full-viewport `<canvas>` fixed behind content, dark transparent bg, `pointer-events-none`.
+- ~180 "BgStar" particles with random position, brightness, twinkle phase, slow drift.
+- Optional `volume` prop (0–1). When > 0, stars pulse slightly brighter/larger — wired from the recorder's live mic level via a lightweight context so we don't restructure props.
+- Respects `prefers-reduced-motion` (static field, no twinkle).
 
-`stars` already has every required column (verified). Status changes happen only through server endpoints (admin client) — no new client update policies.
+## 2. Mic-reactive wobble around the recorder
 
-## 3. API endpoints (raw JSON, never the HTML shell)
+Replace the current circular waveform in `src/components/WaveformCanvas.tsx` (or add a sibling) with the p5 wobble:
 
-All return `Content-Type: application/json` + CORS headers (`Access-Control-Allow-Origin: *`, allow `Content-Type, X-Max-Worker-Secret`), with OPTIONS preflight handlers on the POST routes.
+- Use the same `AnalyserNode` Recorder already provides — no new audio plumbing.
+- Smoothing identical to the prototype: `smoothed = smoothed*0.92 + max(0, vol - 0.001)*0.08`, `wavePower = smoothed * 300`.
+- Render a perlin-noise wobble ring using `circleDiv ≈ 350` points, three rotational copies (theta, theta+PI, theta+1.5PI), 1.5px dots, hue ramp 170→250 like the sketch.
+- Always animates (idle = subtle), gets stronger while recording.
+- Keep the current record button — wobble is purely behind/around it.
 
-**Public GET endpoints (no auth):**
-| Endpoint | Behavior |
-|---|---|
-| `GET /api/public/constellations` | All constellations + nested stars |
-| `GET /api/public/constellations/pending` | Only `pending_synthesis`, + nested stars |
-| `GET /api/public/constellations/:id` | One constellation + nested stars |
-| `GET /api/public/stars/latest` | (already exists) |
+Expose the live volume value (the same smoothed level) up to the page via a small `MicLevelContext` so `StarField` can react to it too. No change to `Recorder` props/API.
 
-**Protected POST endpoints — require `X-Max-Worker-Secret` header:**
-| Endpoint | Behavior |
-|---|---|
-| `POST .../:id/mark-synthesizing` | `pending_synthesis → synthesizing` |
-| `POST .../:id/mark-ready` | `synthesizing → ready`; Zod-validated body `{ synth_audio_url, synth_audio_path }`; sets `ready_at = now()` |
-| `POST .../:id/mark-failed` | `synthesizing → failed`; Zod-validated body `{ error_message }` |
+## 3. Volume-based star placement
 
-**Auth:** header compared (timing-safe) against `MAX_WORKER_SECRET` env var. Missing/wrong → `401 {"error":"Unauthorized Max worker request"}`. I'll prompt you to set the secret value via the secure secrets form — it's never shown in the UI or code.
+In `src/lib/stars.ts → uploadAndInsertStar`, replace the current `randomPosition()` with the p5 radial rule:
 
-**State guards (strict):** invalid transition → `409` JSON with current status. Prevents two Max workers double-claiming the same constellation.
+```ts
+const expectedMaxVolume = 0.35; // tuned to browser mic RMS
+const normVol = clamp((meta.volumeAverage ?? 0) / expectedMaxVolume, 0, 1);
+const radialDistance = 0.12 + normVol * 0.30;       // 0.12 .. 0.42
+const angle = Math.random() * Math.PI * 2;
+const x_position = clamp(0.5 + Math.cos(angle) * radialDistance, 0.05, 0.95);
+const y_position = clamp(0.5 + Math.sin(angle) * radialDistance, 0.05, 0.95);
+```
 
-**Route ordering:** static `pending` file resolves before dynamic `$id` (TanStack static-over-dynamic precedence) — I'll verify this with a live request after implementation.
+Continue storing normalized `x_position`/`y_position`. Add two optional columns to `public.stars` so we can persist the polar form too:
 
-## 4. Create Constellation flow
+- `radial_distance numeric` (nullable)
+- `angle numeric` (nullable)
 
-- Min 3 / max 7 stars; recorder disabled at 7 with "constellation full — create or reset" message.
-- On create: insert constellation row (status defaults `pending_synthesis`), fallback timestamp title, generate `synthesis_params` (per-star duration/peak/average/x/y/color → pitch/pan/gain mapping) and `mood_params` (aggregates: mean volume, density, total duration, palette), assign `constellation_id` to stars, clear active stars, switch to Contemplation Mode.
+Migration also updates the existing `anyone can insert stars` RLS check to allow these new fields (no-op constraints). `volume_average` and `volume_peak` are already stored. No change to server routes, no change to grants beyond what already exists.
 
-## 5. Contemplation Mode UI
+If you'd rather skip the schema change, we can drop `radial_distance`/`angle` and keep only x/y — say the word.
 
-- Status badges: "Waiting for Max synthesis" / "Max is synthesizing" / "Synthesized sound ready" / "Synthesis failed" (+ error message).
-- "Play Synthesized Constellation" only when `status = ready` **and** `synth_audio_url` exists.
-- Individual stars always remain playable.
-- ~10s polling while any constellation is pending/synthesizing so badges update live.
+## 4. Star creation & hover animation
 
-## 6. Max Integration panel
+Upgrade `src/components/ActiveSession.tsx`:
 
-- Endpoint list + copy buttons: `/api/public/constellations/pending`, `/api/public/constellations`, `/api/public/stars/latest`.
-- Latest pending constellation JSON preview.
-- Health checks: fetch each GET endpoint, ✓/✗ for "returns JSON" (catches the HTML-shell failure).
-- Warnings: `?token=` in audio_url → "signed/temporary URL"; ready constellation missing `synth_audio_url`.
-- Clear note: **"POST status endpoints require the `X-Max-Worker-Secret` header"** — secret value never displayed.
-- Max workflow note: poll pending → mark-synthesizing → render WAV → upload to `synthesized/{id}.wav` → POST mark-ready.
+- New stars spawn at canvas center, then lerp to their `x_position * w, y_position * h` over ~900 ms with ease-out (already partially there — extend with per-star animation state).
+- After arrival, each star gets a small per-id sinusoidal "hover" offset (a few px, slow phase) like `Star.hovering()` in the sketch — animated via `requestAnimationFrame`, not CSS, so we can drive many stars cheaply.
+- Click still calls `onPlay(star)` exactly as today; existing Supabase audio playback unchanged.
 
-## 7. Post-implementation test cycle
+## 5. Constellation formation animation
 
-1. Verify all four GET endpoints return raw JSON (not `<!DOCTYPE html>`), including `/pending` resolving before `:id`.
-2. Insert 3 test stars, create a constellation, confirm it appears at `/pending`.
-3. Call mark-synthesizing with the secret header → website shows "Max is synthesizing".
-4. Call mark-synthesizing again → confirm 409.
-5. Call mark-ready with a test WAV URL → website shows "Play Synthesized Constellation".
-6. Confirm the synthesized audio URL plays; confirm wrong/missing secret returns the 401 JSON.
-7. Clean up test data.
+When the user clicks the existing **Create Constellation** button:
 
-## Out of scope
+- Before navigating to Contemplation, animate the current active stars: draw connecting lines that fade/grow in sequence (stroke-dasharray reveal) and pulse each star briefly.
+- ~800 ms transition, then call the existing `createConstellationFromStars` server route as today and switch tab to `observe`.
+- Pure presentation — no backend change.
 
-No WebSocket, OSC, realtime push, or Jitter — polling only.
+## 6. Contemplation Mode: drifting + expanding constellations
+
+Rebuild `ConstellationArchive` grid into a single canvas/SVG scene (kept inside the same tab, no nav change):
+
+- Each saved constellation is rendered as a small star-cluster with connecting lines, placed at a deterministic position derived from its id, drifting slowly (sin/cos offsets per cluster, like the prototype's `Constellation.update()`).
+- Click a cluster → animate it expanding toward viewport center, dim the others, show its title/question prompt.
+- Click outside → animate it shrinking back to its drift position.
+- Inside an expanded constellation: clicking individual stars still calls `onPlay(star)` (existing Supabase audio).
+- Status badge (`pending_synthesis` / `synthesizing` / `ready` / `failed`) and the **Play Synthesized Constellation** button stay as-is, shown when a constellation is expanded.
+- The existing list/grid behavior is replaced by this scene; if you want to keep the grid as a fallback, we can add a small toggle — otherwise the canvas scene becomes the only Contemplation view.
+
+## 7. Out of scope (explicitly unchanged)
+
+- Recorder controls, Tabs, Create Constellation button, Reset session button, header copy, MaxDataPanel debug toggle.
+- All server routes under `src/routes/api/public/*` and `src/lib/max-api.server.ts`.
+- Supabase auth model, RLS for stars insert/select, storage bucket, signed-URL playback path.
+- Max worker polling, mark-ready/mark-failed/mark-synthesizing endpoints, synth-audio signed URL flow.
+
+---
+
+## Technical notes (for the implementation pass)
+
+- New files: `src/components/StarField.tsx`, `src/components/WobbleRing.tsx` (or replace `WaveformCanvas`), `src/lib/mic-level-context.tsx`, `src/components/ContemplationScene.tsx`.
+- Edited files: `src/components/Recorder.tsx` (publish smoothed level into context), `src/components/ActiveSession.tsx` (hover anim + creation lerp), `src/components/ConstellationArchive.tsx` (delegate to ContemplationScene; keep expanded panel chrome), `src/routes/index.tsx` (mount StarField + MicLevelProvider), `src/lib/stars.ts` (radial placement, types).
+- One migration adding nullable `radial_distance` and `angle` to `public.stars` and refreshing the existing insert policy's CHECK to permit them. Grants already cover `authenticated` / `anon` from the existing policy set; no new grants needed.
+- All animation uses `requestAnimationFrame` and respects `prefers-reduced-motion` (degrades to static).
+- No p5, no Web Audio changes beyond reading the existing AnalyserNode.
+
+Confirm and I'll build it.
