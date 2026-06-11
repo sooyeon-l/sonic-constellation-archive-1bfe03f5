@@ -5,6 +5,8 @@ import { Recorder } from "@/components/Recorder";
 import { ActiveSessionOverlay } from "@/components/ActiveSession";
 import { ConstellationArchive } from "@/components/ConstellationArchive";
 import { MaxDataPanel } from "@/components/MaxDataPanel";
+import { StarField } from "@/components/StarField";
+import { MicLevelProvider } from "@/lib/mic-level-context";
 import {
   createConstellationFromStars,
   fetchConstellations,
@@ -14,6 +16,7 @@ import {
   type ConstellationWithStars,
   type StarRow,
 } from "@/lib/stars";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,9 +43,11 @@ function Index() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<"input" | "observe">("input");
   const [saving, setSaving] = useState(false);
+  const [forming, setForming] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showMaxPanel, setShowMaxPanel] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
 
   const reloadArchive = useCallback(async () => {
     try {
@@ -121,6 +126,9 @@ function Index() {
     if (activeStars.length < MIN_CONSTELLATION_STARS || saving) return;
     setSaving(true);
     setSaveError(null);
+    setForming(true);
+    // brief formation animation before backend call
+    await new Promise((r) => setTimeout(r, 800));
     try {
       await createConstellationFromStars(activeStars);
       setActiveStars([]);
@@ -132,9 +140,11 @@ function Index() {
         err instanceof Error ? err.message : "Could not save constellation.",
       );
     } finally {
+      setForming(false);
       setSaving(false);
     }
   };
+
 
   const canCreate = activeStars.length >= MIN_CONSTELLATION_STARS;
   const sessionFull = activeStars.length >= MAX_CONSTELLATION_STARS;
@@ -145,98 +155,106 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
-        <header className="text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-amber-200/70">
-            Sonic Constellation
-          </p>
-          <h1 className="mt-4 text-2xl font-light leading-snug text-zinc-100 md:text-3xl">
-            {QUESTION_TEXT}
-          </h1>
-        </header>
+    <MicLevelProvider>
+      <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
+        <StarField />
+        <div className="relative z-10 mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
+          <header className="text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-amber-200/70">
+              Sonic Constellation
+            </p>
+            <h1 className="mt-4 text-2xl font-light leading-snug text-zinc-100 md:text-3xl">
+              {QUESTION_TEXT}
+            </h1>
+          </header>
 
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as "input" | "observe")}
-          className="w-full"
-        >
-          <TabsList className="mx-auto grid w-full max-w-sm grid-cols-2 bg-zinc-900">
-            <TabsTrigger value="input">Input Mode</TabsTrigger>
-            <TabsTrigger value="observe">
-              Contemplation ({archive.length})
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="input" className="pt-6">
-            <div className="relative mx-auto h-[60vh] min-h-[420px] w-full overflow-hidden rounded-lg border border-border/30 bg-black/40">
-              <ActiveSessionOverlay
-                stars={activeStars}
-                onPlay={playStar}
-                activeId={activeId}
-              />
-              <div className="relative z-10 flex h-full flex-col items-center justify-center">
-                <Recorder
-                  onSubmitted={handleSubmitted}
-                  disabled={sessionFull}
-                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as "input" | "observe")}
+            className="w-full"
+          >
+            <TabsList className="mx-auto grid w-full max-w-sm grid-cols-2 bg-zinc-900/80 backdrop-blur">
+              <TabsTrigger value="input">Input Mode</TabsTrigger>
+              <TabsTrigger value="observe">
+                Contemplation ({archive.length})
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="input" className="pt-6">
+              <div
+                className={`relative mx-auto h-[60vh] min-h-[420px] w-full overflow-hidden rounded-lg border border-border/30 bg-black/40 transition ${
+                  forming ? "ring-2 ring-amber-200/60 shadow-[0_0_60px_rgba(252,211,77,0.35)]" : ""
+                }`}
+              >
+                <ActiveSessionOverlay
+                  stars={activeStars}
+                  onPlay={playStar}
+                  activeId={activeId}
                 />
+                <div className="relative z-10 flex h-full flex-col items-center justify-center">
+                  <Recorder
+                    onSubmitted={handleSubmitted}
+                    disabled={sessionFull}
+                    disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground">
-                {activeStars.length} star{activeStars.length === 1 ? "" : "s"} in
-                this session
-                {!canCreate && activeStars.length > 0
-                  ? ` · ${MIN_CONSTELLATION_STARS - activeStars.length} more to form a constellation`
-                  : ""}
-                {sessionFull ? " · session full (max 7)" : ""}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={createConstellation}
-                  disabled={!canCreate || saving}
-                  className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-                >
-                  {saving ? "Saving…" : "Create Constellation"}
-                </button>
-                {activeStars.length > 0 && (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {activeStars.length} star{activeStars.length === 1 ? "" : "s"} in
+                  this session
+                  {!canCreate && activeStars.length > 0
+                    ? ` · ${MIN_CONSTELLATION_STARS - activeStars.length} more to form a constellation`
+                    : ""}
+                  {sessionFull ? " · session full (max 7)" : ""}
+                </p>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={resetSession}
-                    disabled={saving}
-                    className="rounded-md border border-white/30 px-3 py-2 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                    onClick={createConstellation}
+                    disabled={!canCreate || saving}
+                    className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                   >
-                    Reset session
+                    {forming ? "Forming…" : saving ? "Saving…" : "Create Constellation"}
                   </button>
+                  {activeStars.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={resetSession}
+                      disabled={saving}
+                      className="rounded-md border border-white/30 px-3 py-2 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                    >
+                      Reset session
+                    </button>
+                  )}
+                </div>
+                {saveError && (
+                  <p className="text-xs text-red-300" role="status">
+                    {saveError}
+                  </p>
                 )}
               </div>
-              {saveError && (
-                <p className="text-xs text-red-300" role="status">
-                  {saveError}
-                </p>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="observe" className="pt-6">
-            <ConstellationArchive
-              constellations={archive}
-              onPlay={playStar}
-              onPlaySynth={playSynth}
-              activeStarId={activeId}
-            />
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+            <TabsContent value="observe" className="pt-6">
+              <ConstellationArchive
+                constellations={archive}
+                onPlay={playStar}
+                onPlaySynth={playSynth}
+                activeStarId={activeId}
+              />
+            </TabsContent>
+          </Tabs>
 
-        <audio
-          ref={audioRef}
-          onEnded={() => setActiveId(null)}
-          onPause={() => setActiveId((prev) => prev)}
-          className="hidden"
-        />
+          <audio
+            ref={audioRef}
+            onEnded={() => setActiveId(null)}
+            onPause={() => setActiveId((prev) => prev)}
+            className="hidden"
+          />
 
-        {showMaxPanel && <MaxDataPanel />}
+          {showMaxPanel && <MaxDataPanel />}
+        </div>
       </div>
-    </div>
+    </MicLevelProvider>
   );
+
 }

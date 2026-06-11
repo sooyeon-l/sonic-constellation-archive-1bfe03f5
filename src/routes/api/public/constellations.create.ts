@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/constellations/create")({
         const { data: stars, error: sErr } = await supabaseAdmin
           .from("stars")
           .select(
-            "id, constellation_id, audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color",
+            "id, constellation_id, audio_url, audio_path, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, radial_distance, angle, color",
           )
           .in("id", uniqueIds);
         if (sErr) return api.json({ error: sErr.message }, 500);
