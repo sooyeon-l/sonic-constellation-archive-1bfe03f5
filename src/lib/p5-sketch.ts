@@ -86,33 +86,43 @@ export function createSketch(getProps: GetProps) {
 
     function ensureConstellation(c: ConstellationWithStars) {
       const existing = constellationMap.get(c.id);
+      if (existing && existing.starOffsets.length === c.stars.length) {
+        return existing;
+      }
+      // Centroid-normalize the stars' saved positions so the constellation
+      // is a unified, scale-invariant shape — preserves relative layout
+      // but every cluster has a consistent unit footprint.
+      const n = Math.max(1, c.stars.length);
+      const meanX = c.stars.reduce((a, s) => a + s.x_position, 0) / n;
+      const meanY = c.stars.reduce((a, s) => a + s.y_position, 0) / n;
+      let maxR = 0;
+      for (const s of c.stars) {
+        const dx = s.x_position - meanX;
+        const dy = s.y_position - meanY;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        if (r > maxR) maxR = r;
+      }
+      const norm = Math.max(maxR, 0.0001);
+      const offsets = c.stars.map((s) => ({
+        id: s.id,
+        dx: (s.x_position - meanX) / norm,
+        dy: (s.y_position - meanY) / norm,
+        color: s.color,
+      }));
       if (existing) {
-        // refresh star offsets if star list changed length
-        if (existing.starOffsets.length !== c.stars.length) {
-          existing.starOffsets = c.stars.map((s) => ({
-            id: s.id,
-            dx: s.x_position - 0.5,
-            dy: s.y_position - 0.5,
-            color: s.color,
-          }));
-        }
+        existing.starOffsets = offsets;
         return existing;
       }
       const seed = hash01(c.id);
       const seed2 = hash01(c.id + "y");
       const vis: ConstellationVis = {
         id: c.id,
-        cx: (0.25 + seed * 0.50) * p.width,
-        cy: (0.28 + seed2 * 0.44) * p.height,
+        cx: (0.2 + seed * 0.6) * p.width,
+        cy: (0.22 + seed2 * 0.56) * p.height,
         vx: (seed - 0.5) * 0.2,
         vy: (seed2 - 0.5) * 0.2,
         expansion: 0,
-        starOffsets: c.stars.map((s) => ({
-          id: s.id,
-          dx: s.x_position - 0.5,
-          dy: s.y_position - 0.5,
-          color: s.color,
-        })),
+        starOffsets: offsets,
       };
       constellationMap.set(c.id, vis);
       return vis;
