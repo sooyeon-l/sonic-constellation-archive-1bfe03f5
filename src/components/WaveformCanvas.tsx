@@ -6,24 +6,51 @@ interface Props {
   active: boolean;
 }
 
-// 2D noise-ish function — cheap pseudo-perlin via summed sines.
-function pseudoNoise(x: number, y: number, t: number) {
-  return (
-    Math.sin(x * 1.7 + t * 0.9) * 0.5 +
-    Math.sin(y * 2.1 - t * 1.1) * 0.3 +
-    Math.sin((x + y) * 1.3 + t * 0.6) * 0.2
-  );
+// --- Lightweight 3D value noise (no deps) ---
+// Hash → pseudo-random in [0,1] from integer lattice coords.
+function hash3(ix: number, iy: number, iz: number): number {
+  let h = ix * 374761393 + iy * 668265263 + iz * 2147483647;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  h = h ^ (h >>> 16);
+  return ((h >>> 0) % 100000) / 100000;
+}
+const fade = (t: number) => t * t * (3 - 2 * t);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+function noise3(x: number, y: number, z: number): number {
+  const x0 = Math.floor(x), y0 = Math.floor(y), z0 = Math.floor(z);
+  const x1 = x0 + 1, y1 = y0 + 1, z1 = z0 + 1;
+  const xf = fade(x - x0), yf = fade(y - y0), zf = fade(z - z0);
+
+  const c000 = hash3(x0, y0, z0);
+  const c100 = hash3(x1, y0, z0);
+  const c010 = hash3(x0, y1, z0);
+  const c110 = hash3(x1, y1, z0);
+  const c001 = hash3(x0, y0, z1);
+  const c101 = hash3(x1, y0, z1);
+  const c011 = hash3(x0, y1, z1);
+  const c111 = hash3(x1, y1, z1);
+
+  const x00 = lerp(c000, c100, xf);
+  const x10 = lerp(c010, c110, xf);
+  const x01 = lerp(c001, c101, xf);
+  const x11 = lerp(c011, c111, xf);
+  const y0i = lerp(x00, x10, yf);
+  const y1i = lerp(x01, x11, yf);
+  return lerp(y0i, y1i, zf); // [0,1]
 }
 
 /**
- * p5-prototype-style wobble ring around the recorder. Driven by the same
- * AnalyserNode the Recorder already creates. Also broadcasts the smoothed
- * level into MicLevelContext so other visuals (StarField) can react.
+ * Organic wobble ring matching the teammate's p5 sketch. Uses 3D value-noise
+ * sampled at (cos θ * 0.8 + 10, sin θ * 0.8 + 10, frame * 0.008) so neighbor
+ * points have uncorrelated radii — produces the hand-drawn strand look rather
+ * than a perfect circle.
  */
 export function WaveformCanvas({ analyser, active }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const smoothedRef = useRef(0);
+  const frameRef = useRef(0);
   const mic = useMicLevel();
 
   useEffect(() => {
@@ -41,7 +68,10 @@ export function WaveformCanvas({ analyser, active }: Props) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const buf = analyser ? new Uint8Array(analyser.fftSize) : null;
-    const circleDiv = 350;
+    const circleDiv = 340;
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     const draw = () => {
       ctx.clearRect(0, 0, size, size);
@@ -59,30 +89,31 @@ export function WaveformCanvas({ analyser, active }: Props) {
 
       const threshold = 0.001;
       const audioEnergy = Math.max(0, level - threshold);
-      // p5 prototype smoothing
       smoothedRef.current = smoothedRef.current * 0.92 + audioEnergy * 0.08;
       const s = smoothedRef.current;
       mic.publish(s);
 
+      if (!reduced) frameRef.current += 1;
+      const frame = frameRef.current;
+
       const cx = size / 2;
       const cy = size / 2;
       const baseRadius = size / 5;
-      // idle still has a tiny baseline so the ring never feels dead
-      const idleBoost = active ? 0 : 0.0015;
-      const wavePower = (s + idleBoost) * 300;
-      const t = performance.now() * 0.001;
+      // small idle baseline so the ring is still organic at silence
+      const idle = 0.002;
+      const wavePower = reduced ? 0 : (s + idle) * 300;
+      const nz = frame * 0.008;
 
       for (let i = 0; i < circleDiv; i++) {
         const theta = (i * Math.PI * 2) / circleDiv;
         const nx = Math.cos(theta) * 0.8 + 10;
         const ny = Math.sin(theta) * 0.8 + 10;
-        const n = pseudoNoise(nx, ny, t * 0.6);
-        const wobble = n * wavePower * 0.6;
+        const n = noise3(nx, ny, nz) * 2 - 1; // [-1,1]
+        const wobble = n * wavePower * 5;
         const radius = baseRadius + wobble;
 
         const dotR = 1.2;
-
-        const hue = 170 + ((theta / (Math.PI * 2)) * 80); // 170..250
+        const hue = 170 + (theta / (Math.PI * 2)) * 80;
         ctx.fillStyle = `hsla(${hue}, 60%, 80%, 0.75)`;
 
         const x1 = cx + radius * Math.cos(theta);
@@ -105,19 +136,20 @@ export function WaveformCanvas({ analyser, active }: Props) {
       }
 
       // soft outer glow
+      const glowR = baseRadius + Math.abs(wavePower) * 5 + 60;
       const glow = ctx.createRadialGradient(
         cx,
         cy,
         baseRadius * 0.4,
         cx,
         cy,
-        baseRadius + wavePower + 60,
+        glowR,
       );
       glow.addColorStop(0, `rgba(253, 230, 138, ${0.06 + s * 0.6})`);
       glow.addColorStop(1, "rgba(253, 230, 138, 0)");
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(cx, cy, baseRadius + wavePower + 60, 0, Math.PI * 2);
+      ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
       ctx.fill();
 
       rafRef.current = requestAnimationFrame(draw);
