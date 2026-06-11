@@ -277,9 +277,39 @@ function Index() {
           centerY={tab === "input" ? (anchor?.y ?? null) : null}
           onStarClick={handleStarClick}
           onConstellationClick={handleConstellationClick}
+          onHoverChange={tab === "observe" ? setHoverInfo : undefined}
         />
 
       </div>
+
+      {showTooltip && hoverInfo && hoveredConstellation && (
+        <div
+          data-html-overlay="true"
+          className="pointer-events-none fixed z-30 rounded-md border border-amber-200/25 bg-zinc-950/85 px-3 py-2 text-xs text-amber-100 shadow-xl backdrop-blur"
+          style={{
+            left: Math.max(
+              12,
+              Math.min(
+                (typeof window !== "undefined" ? window.innerWidth : 9999) - 12,
+                hoverInfo.x,
+              ),
+            ),
+            top: Math.max(12, hoverInfo.y - 14),
+            transform: "translate(-50%, -100%)",
+          }}
+        >
+          <p className="max-w-[16rem] truncate font-medium">
+            {hoveredConstellation.title || hoveredConstellation.question_text}
+          </p>
+          <p className="mt-0.5 text-[10px] text-zinc-400">
+            {formatKST(hoveredConstellation.created_at)}
+          </p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider text-amber-200/80">
+            {STATUS_LABELS[hoveredConstellation.status]}
+          </p>
+        </div>
+      )}
+
 
       {/* HTML overlay layer — controls, status, accessibility. */}
       <div className="pointer-events-none relative z-10 mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 pb-12 pt-[max(2.5rem,env(safe-area-inset-top))]">
