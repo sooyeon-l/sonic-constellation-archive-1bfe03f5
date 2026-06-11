@@ -100,8 +100,21 @@ function Index() {
 
   const playStar = (star: StarRow) => playUrl(star.audio_url, star.id);
 
-  const playSynth = (c: ConstellationWithStars) => {
-    if (c.synth_audio_url) playUrl(c.synth_audio_url, `synth:${c.id}`);
+  const playSynth = async (c: ConstellationWithStars) => {
+    if (c.status !== "ready" || !c.synth_audio_path) return;
+    try {
+      const res = await fetch(
+        `/api/public/constellations/${c.id}/synth-audio`,
+        { headers: { Accept: "application/json" } },
+      );
+      const data = (await res.json()) as { signed_url?: string; error?: string };
+      if (!res.ok || !data.signed_url) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      playUrl(data.signed_url, `synth:${c.id}`);
+    } catch (err) {
+      console.error("Failed to load synthesized audio", err);
+    }
   };
 
   const createConstellation = async () => {
