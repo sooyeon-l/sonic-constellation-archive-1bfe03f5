@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const QUESTION_TEXT =
   "What sound do you wish you could hear one more time?";
 
-export const MIN_CONSTELLATION_STARS = 3;
+export const MIN_CONSTELLATION_STARS = 5;
 export const MAX_CONSTELLATION_STARS = 7;
 
 export const STAR_COLORS = [
