@@ -1,11 +1,37 @@
 import { useState } from "react";
-import type { ConstellationWithStars, StarRow } from "@/lib/stars";
+import {
+  STATUS_LABELS,
+  type ConstellationStatus,
+  type ConstellationWithStars,
+  type StarRow,
+} from "@/lib/stars";
 import { Constellation } from "./Constellation";
 
 interface Props {
   constellations: ConstellationWithStars[];
   onPlay: (star: StarRow) => void;
+  onPlaySynth: (c: ConstellationWithStars) => void;
   activeStarId: string | null;
+}
+
+const STATUS_STYLES: Record<ConstellationStatus, string> = {
+  pending_synthesis: "border-sky-300/40 bg-sky-300/10 text-sky-200",
+  synthesizing: "border-amber-300/40 bg-amber-300/10 text-amber-200",
+  ready: "border-emerald-300/40 bg-emerald-300/10 text-emerald-200",
+  failed: "border-red-400/40 bg-red-400/10 text-red-200",
+};
+
+function StatusBadge({ status }: { status: ConstellationStatus }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] ${STATUS_STYLES[status] ?? "border-border/40 bg-black/30 text-zinc-300"}`}
+    >
+      {status === "synthesizing" && (
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
+      )}
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
 }
 
 function MiniConstellation({ c }: { c: ConstellationWithStars }) {
@@ -40,6 +66,7 @@ function MiniConstellation({ c }: { c: ConstellationWithStars }) {
 export function ConstellationArchive({
   constellations,
   onPlay,
+  onPlaySynth,
   activeStarId,
 }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -55,6 +82,9 @@ export function ConstellationArchive({
   }
 
   if (expanded) {
+    const synthPlayable =
+      expanded.status === "ready" && Boolean(expanded.synth_audio_url);
+    const synthPlaying = activeStarId === `synth:${expanded.id}`;
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -64,6 +94,9 @@ export function ConstellationArchive({
               {expanded.stars.length} stars ·{" "}
               {new Date(expanded.created_at).toLocaleString()}
             </p>
+            <div className="mt-1.5">
+              <StatusBadge status={expanded.status} />
+            </div>
           </div>
           <button
             type="button"
@@ -73,6 +106,20 @@ export function ConstellationArchive({
             ← Back to archive
           </button>
         </div>
+        {synthPlayable && (
+          <button
+            type="button"
+            onClick={() => onPlaySynth(expanded)}
+            className="w-full rounded-md bg-emerald-300 px-4 py-2.5 text-sm font-medium text-zinc-900 transition hover:bg-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+          >
+            {synthPlaying ? "▶ Playing synthesized constellation…" : "▶ Play Synthesized Constellation"}
+          </button>
+        )}
+        {expanded.status === "failed" && expanded.error_message && (
+          <p className="rounded border border-red-400/30 bg-red-400/10 p-2 text-xs text-red-200">
+            {expanded.error_message}
+          </p>
+        )}
         <Constellation
           stars={expanded.stars}
           onPlay={onPlay}
@@ -98,6 +145,9 @@ export function ConstellationArchive({
           <div className="mt-2 truncate text-xs text-zinc-200">{c.title}</div>
           <div className="text-[10px] text-muted-foreground">
             {c.stars.length} stars
+          </div>
+          <div className="mt-1.5">
+            <StatusBadge status={c.status} />
           </div>
         </button>
       ))}

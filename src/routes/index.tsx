@@ -8,6 +8,8 @@ import { MaxDataPanel } from "@/components/MaxDataPanel";
 import {
   createConstellationFromStars,
   fetchConstellations,
+  MAX_CONSTELLATION_STARS,
+  MIN_CONSTELLATION_STARS,
   QUESTION_TEXT,
   type ConstellationWithStars,
   type StarRow,
@@ -54,13 +56,25 @@ function Index() {
     reloadArchive();
   }, [reloadArchive]);
 
+  // Poll while any constellation is waiting on Max so status badges update live.
+  useEffect(() => {
+    const waiting = archive.some(
+      (c) => c.status === "pending_synthesis" || c.status === "synthesizing",
+    );
+    if (!waiting) return;
+    const t = window.setInterval(() => {
+      reloadArchive();
+    }, 10000);
+    return () => window.clearInterval(t);
+  }, [archive, reloadArchive]);
+
   const handleSubmitted = (star: StarRow) => {
     setActiveStars((prev) =>
       prev.some((s) => s.id === star.id) ? prev : [...prev, star],
     );
   };
 
-  const playStar = (star: StarRow) => {
+  const playUrl = (url: string, key: string) => {
     const el = audioRef.current;
     if (!el) return;
     try {
@@ -68,21 +82,27 @@ function Index() {
     } catch {
       /* noop */
     }
-    el.src = star.audio_url;
+    el.src = url;
     el.currentTime = 0;
-    setActiveId(star.id);
+    setActiveId(key);
     el.play().catch((err) => {
       console.error(err);
       setActiveId(null);
     });
   };
 
+  const playStar = (star: StarRow) => playUrl(star.audio_url, star.id);
+
+  const playSynth = (c: ConstellationWithStars) => {
+    if (c.synth_audio_url) playUrl(c.synth_audio_url, `synth:${c.id}`);
+  };
+
   const createConstellation = async () => {
-    if (activeStars.length < 3 || saving) return;
+    if (activeStars.length < MIN_CONSTELLATION_STARS || saving) return;
     setSaving(true);
     setSaveError(null);
     try {
-      await createConstellationFromStars(activeStars.map((s) => s.id));
+      await createConstellationFromStars(activeStars);
       setActiveStars([]);
       await reloadArchive();
       setTab("observe");
@@ -96,7 +116,13 @@ function Index() {
     }
   };
 
-  const canCreate = activeStars.length >= 3;
+  const canCreate = activeStars.length >= MIN_CONSTELLATION_STARS;
+  const sessionFull = activeStars.length >= MAX_CONSTELLATION_STARS;
+
+  const resetSession = () => {
+    setActiveStars([]);
+    setSaveError(null);
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -129,7 +155,11 @@ function Index() {
                 activeId={activeId}
               />
               <div className="relative z-10 flex h-full flex-col items-center justify-center">
-                <Recorder onSubmitted={handleSubmitted} />
+                <Recorder
+                  onSubmitted={handleSubmitted}
+                  disabled={sessionFull}
+                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+                />
               </div>
             </div>
             <div className="mt-4 flex flex-col items-center gap-2">
@@ -137,17 +167,30 @@ function Index() {
                 {activeStars.length} star{activeStars.length === 1 ? "" : "s"} in
                 this session
                 {!canCreate && activeStars.length > 0
-                  ? ` · ${3 - activeStars.length} more to form a constellation`
+                  ? ` · ${MIN_CONSTELLATION_STARS - activeStars.length} more to form a constellation`
                   : ""}
+                {sessionFull ? " · session full (max 7)" : ""}
               </p>
-              <button
-                type="button"
-                onClick={createConstellation}
-                disabled={!canCreate || saving}
-                className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-              >
-                {saving ? "Saving…" : "Create Constellation"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={createConstellation}
+                  disabled={!canCreate || saving}
+                  className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                >
+                  {saving ? "Saving…" : "Create Constellation"}
+                </button>
+                {activeStars.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={resetSession}
+                    disabled={saving}
+                    className="rounded-md border border-white/30 px-3 py-2 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                  >
+                    Reset session
+                  </button>
+                )}
+              </div>
               {saveError && (
                 <p className="text-xs text-red-300" role="status">
                   {saveError}
@@ -159,6 +202,7 @@ function Index() {
             <ConstellationArchive
               constellations={archive}
               onPlay={playStar}
+              onPlaySynth={playSynth}
               activeStarId={activeId}
             />
           </TabsContent>
