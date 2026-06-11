@@ -92,10 +92,11 @@ export function radialPositionFromVolume(volumeAverage: number | null) {
   const normVol = clamp01((volumeAverage ?? 0) / expectedMax, 0, 1);
   const radialDistance = 0.12 + normVol * 0.30; // 0.12 .. 0.42 of canvas half-size
   const angle = Math.random() * Math.PI * 2;
-  const x = clamp01(0.5 + Math.cos(angle) * radialDistance, 0.05, 0.95);
-  const y = clamp01(0.5 + Math.sin(angle) * radialDistance, 0.05, 0.95);
-  return { x, y, radialDistance, angle };
+  const x = clamp01(0.5 + Math.cos(angle) * radialDistance, 0.08, 0.92);
+  const y = clamp01(0.5 + Math.sin(angle) * radialDistance, 0.08, 0.92);
+  return { x, y, radialDistance, angle, normVol };
 }
+
 
 export function randomPosition() {
   const pad = 0.08;
@@ -282,6 +283,7 @@ export async function uploadAndInsertStar(
     audioUrl = signed.signedUrl;
   }
 
+  console.log("audio meta for placement", meta);
   const pos = radialPositionFromVolume(meta.volumeAverage);
   const row = {
     id,
@@ -298,6 +300,15 @@ export async function uploadAndInsertStar(
     angle: Number(pos.angle.toFixed(4)),
     color: randomColor(),
   };
+  console.log("star placement", {
+    volume: meta.volumeAverage,
+    normVol: pos.normVol,
+    radialDistance: pos.radialDistance,
+    angle: pos.angle,
+    x_position: row.x_position,
+    y_position: row.y_position,
+  });
+
 
 
   const { data, error } = await supabase

@@ -213,7 +213,11 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   const recordLocked = Boolean(disabled) && phase === "idle";
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div
+      data-recorder-anchor
+      className="relative flex flex-col items-center"
+      style={{ width: 320 }}
+    >
       <div className="relative flex h-80 w-80 items-center justify-center">
         <button
           onClick={() => {
@@ -239,15 +243,34 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
         </button>
       </div>
 
-      {recordLocked && (
-        <p className="max-w-xs text-center text-xs text-amber-200/85" role="status">
-          {disabledMessage ??
-            "This constellation is full — create it or reset the session to record more."}
-        </p>
+      {/* Fixed-height status slot so the anchor doesn't shift. */}
+      <div className="flex h-12 w-full items-start justify-center px-2 text-center">
+        {recordLocked ? (
+          <p className="max-w-xs text-xs text-amber-200/85" role="status">
+            {disabledMessage ??
+              "This constellation is full — create it or reset the session to record more."}
+          </p>
+        ) : message ? (
+          <p className="text-sm text-amber-200/90" role="status">
+            {message}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Stop button absolutely positioned so it doesn't push the main button. */}
+      {phase === "recording" && (
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="absolute left-1/2 top-full -translate-x-1/2 rounded-md border border-red-400/60 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 transition hover:bg-red-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+        >
+          Stop
+        </button>
       )}
 
+      {/* Preview panel floats below — does not affect anchor centering. */}
       {phase === "preview" && previewUrl && (
-        <div className="flex w-full max-w-md flex-col items-center gap-3">
+        <div className="absolute left-1/2 top-full z-20 mt-2 flex w-[min(28rem,90vw)] -translate-x-1/2 flex-col items-center gap-3 rounded-lg border border-white/10 bg-zinc-950/85 p-3 shadow-2xl backdrop-blur">
           <audio src={previewUrl} controls className="w-full" />
           <div className="flex gap-2">
             <button
@@ -266,22 +289,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
             </button>
           </div>
         </div>
-      )}
-
-      {phase === "recording" && (
-        <button
-          type="button"
-          onClick={stopRecording}
-          className="rounded-md border border-red-400/60 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 transition hover:bg-red-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
-        >
-          Stop
-        </button>
-      )}
-
-      {message && (
-        <p className="text-sm text-amber-200/90" role="status">
-          {message}
-        </p>
       )}
     </div>
   );

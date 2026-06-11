@@ -8,10 +8,14 @@ export interface SketchProps {
   activeStars: StarRow[];
   constellations: ConstellationWithStars[];
   selectedConstellationId: string | null;
+  /** Recorder anchor center in CSS px (input mode only). */
+  centerX?: number | null;
+  centerY?: number | null;
   onStarClick?: (starId: string) => void;
   onConstellationClick?: (id: string | null) => void;
   reducedMotion?: boolean;
 }
+
 
 type GetProps = () => SketchProps;
 
@@ -167,15 +171,27 @@ export function createSketch(getProps: GetProps) {
       }
     }
 
+    function getInputCenter() {
+      const props = getProps();
+      const cx =
+        typeof props.centerX === "number" && Number.isFinite(props.centerX)
+          ? props.centerX
+          : p.width / 2;
+      const cy =
+        typeof props.centerY === "number" && Number.isFinite(props.centerY)
+          ? props.centerY
+          : p.height / 2;
+      return { cx, cy };
+    }
+
     function drawWobble(vol: number) {
       const reduced = getProps().reducedMotion;
       const threshold = 0.001;
       const audioEnergy = Math.max(0, vol - threshold);
       smoothed = smoothed * 0.92 + audioEnergy * 0.08;
       const wavePower = reduced ? 0 : smoothed * 300;
-      const baseRadius = p.height / 5;
-      const cx = p.width / 2;
-      const cy = p.height / 2;
+      const baseRadius = Math.min(p.width, p.height) / 6;
+      const { cx, cy } = getInputCenter();
       const nz = reduced ? 0 : p.frameCount * 0.008;
 
       p.noStroke();
@@ -209,10 +225,12 @@ export function createSketch(getProps: GetProps) {
 
     function computeActiveStarPos(a: ActiveStarVis) {
       const now = p.millis();
-      const cx = p.width / 2;
-      const cy = p.height / 2;
-      const tX = a.tx * p.width;
-      const tY = a.ty * p.height;
+      const { cx, cy } = getInputCenter();
+      // Saved coords are normalized offsets around 0.5 — render them as
+      // offsets from the recorder anchor, scaled by the canvas short edge.
+      const scale = Math.min(p.width, p.height);
+      const tX = cx + (a.tx - 0.5) * scale;
+      const tY = cy + (a.ty - 0.5) * scale;
       const t = Math.min(1, (now - a.spawnTs) / SPAWN_MS);
       const e = easeOutCubic(t);
       let x = cx + (tX - cx) * e;
@@ -226,21 +244,8 @@ export function createSketch(getProps: GetProps) {
     }
 
     function drawActiveStars() {
-      const coords: Array<[number, number]> = [];
-      for (const a of activeStarMap.values()) {
-        const pos = computeActiveStarPos(a);
-        coords.push([pos.x, pos.y]);
-      }
-      if (coords.length > 1) {
-        p.push();
-        p.noFill();
-        p.stroke(45, 70, 100, 28);
-        p.strokeWeight(1);
-        p.beginShape();
-        for (const [x, y] of coords) p.vertex(x, y);
-        p.endShape();
-        p.pop();
-      }
+      // No connecting lines in input mode — stars are independent dots
+      // until the user explicitly creates a constellation.
       for (const a of activeStarMap.values()) {
         const { x, y, e } = computeActiveStarPos(a);
         const halo = p.color(a.color);
@@ -254,6 +259,7 @@ export function createSketch(getProps: GetProps) {
         p.ellipse(x, y, 6);
       }
     }
+
 
     function getConstellationDrawInfo(v: ConstellationVis) {
       const target = getProps().selectedConstellationId === v.id ? 1 : 0;

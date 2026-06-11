@@ -53,7 +53,9 @@ function Index() {
     string | null
   >(null);
   const [liveVolume, setLiveVolume] = useState(0);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recorderAnchorRef = useRef<HTMLDivElement | null>(null);
   const mic = useMicLevel();
 
   // Subscribe to mic level for the p5 visual layer.
@@ -61,6 +63,31 @@ function Index() {
     const unsub = mic.subscribe((v) => setLiveVolume(v));
     return unsub;
   }, [mic]);
+
+  // Track the recorder anchor center (viewport coords) so p5 can anchor the
+  // wobble + active stars to it in Input Mode.
+  useEffect(() => {
+    if (tab !== "input") return;
+    const measure = () => {
+      const el = recorderAnchorRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setAnchor({ x: r.left + r.width / 2, y: r.top + 160 /* button center */ });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (recorderAnchorRef.current) ro.observe(recorderAnchorRef.current);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    const t = window.setInterval(measure, 500);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+      window.clearInterval(t);
+    };
+  }, [tab]);
+
 
   const reloadArchive = useCallback(async () => {
     try {
@@ -216,9 +243,12 @@ function Index() {
           activeStars={activeStars}
           constellations={archive}
           selectedConstellationId={selectedConstellationId}
+          centerX={tab === "input" ? (anchor?.x ?? null) : null}
+          centerY={tab === "input" ? (anchor?.y ?? null) : null}
           onStarClick={handleStarClick}
           onConstellationClick={handleConstellationClick}
         />
+
       </div>
 
       {/* HTML overlay layer — controls, status, accessibility. */}
@@ -252,13 +282,16 @@ function Index() {
                   : ""
               }`}
             >
-              <div className="pointer-events-auto relative z-10 flex h-full flex-col items-center justify-center">
-                <Recorder
-                  onSubmitted={handleSubmitted}
-                  disabled={sessionFull}
-                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
-                />
+              <div className="pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                <div ref={recorderAnchorRef}>
+                  <Recorder
+                    onSubmitted={handleSubmitted}
+                    disabled={sessionFull}
+                    disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+                  />
+                </div>
               </div>
+
             </div>
             <div className="pointer-events-auto mt-4 flex flex-col items-center gap-2">
               <p className="text-xs text-muted-foreground">
