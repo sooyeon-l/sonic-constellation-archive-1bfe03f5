@@ -1,4 +1,4 @@
-import type { StarRow } from "@/lib/stars";
+import { formatKST, type StarRow } from "@/lib/stars";
 
 interface Props {
   stars: StarRow[];
