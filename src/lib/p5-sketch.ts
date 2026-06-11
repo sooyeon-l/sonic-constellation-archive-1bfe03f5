@@ -13,6 +13,7 @@ export interface SketchProps {
   centerY?: number | null;
   onStarClick?: (starId: string) => void;
   onConstellationClick?: (id: string | null) => void;
+  onHoverChange?: (hover: { id: string; x: number; y: number } | null) => void;
   reducedMotion?: boolean;
 }
 
@@ -68,6 +69,8 @@ export function createSketch(getProps: GetProps) {
     const circleDiv = 350;
     const activeStarMap = new Map<string, ActiveStarVis>();
     const constellationMap = new Map<string, ConstellationVis>();
+    let hoveredId: string | null = null;
+    let canvasEl: HTMLCanvasElement | null = null;
 
     function rebuildBgStars() {
       bgStars = [];
@@ -326,6 +329,7 @@ export function createSketch(getProps: GetProps) {
       const minDim = Math.min(p.width, p.height);
       const baseScale = minDim * 0.10;
       const pad = minDim * 0.08 + baseScale;
+      const pulse = 0.5 + 0.5 * Math.sin(p.frameCount * 0.03);
       for (const v of constellationMap.values()) {
         if (!reduced && selectedId !== v.id) {
           v.cx += v.vx;
@@ -337,12 +341,25 @@ export function createSketch(getProps: GetProps) {
         }
         const { cx, cy, scale } = getConstellationDrawInfo(v);
         const isSelected = selectedId === v.id;
+        const isHovered = hoveredId === v.id && !isSelected;
         const alphaMul = !selectedId ? 1 : isSelected ? 1 : 0.3;
 
+        // Hover glow — soft, pulsing radial halos behind the cluster.
+        if (isHovered) {
+          p.push();
+          p.noStroke();
+          p.fill(45, 60, 100, 12 + pulse * 10);
+          p.ellipse(cx, cy, scale * 3.6);
+          p.fill(45, 70, 100, 18 + pulse * 14);
+          p.ellipse(cx, cy, scale * 2.4);
+          p.pop();
+        }
+
+        const hoverBoost = isHovered ? 15 : 0;
         p.push();
         p.noFill();
-        p.stroke(45, 70, 100, (isSelected ? 95 : 60) * alphaMul);
-        p.strokeWeight(isSelected ? 1.8 : 1.2);
+        p.stroke(45, 70, 100, (isSelected ? 95 : 60 + hoverBoost) * alphaMul);
+        p.strokeWeight(isSelected ? 1.8 : isHovered ? 1.5 : 1.2);
         p.beginShape();
         for (const off of v.starOffsets) {
           p.vertex(cx + off.dx * scale, cy + off.dy * scale);
@@ -358,10 +375,10 @@ export function createSketch(getProps: GetProps) {
           const x = cx + off.dx * scale;
           const y = cy + off.dy * scale;
           const halo = p.color(off.color);
-          halo.setAlpha((isSelected ? 85 : 55) * alphaMul);
+          halo.setAlpha((isSelected ? 85 : 55 + hoverBoost) * alphaMul);
           p.noStroke();
           p.fill(halo);
-          p.ellipse(x, y, isSelected ? 36 : 22);
+          p.ellipse(x, y, isSelected ? 36 : isHovered ? 28 : 22);
           const core = p.color(off.color);
           core.setAlpha(240 * alphaMul);
           p.fill(core);
@@ -378,28 +395,47 @@ export function createSketch(getProps: GetProps) {
       return null;
     }
 
-    function hitTestConstellation(mx: number, my: number) {
+    function hitTestSelectedStar(mx: number, my: number): string | null {
       const selectedId = getProps().selectedConstellationId;
-      if (selectedId) {
-        const v = constellationMap.get(selectedId);
-        if (v) {
-          const { cx, cy, scale } = getConstellationDrawInfo(v);
-          for (const off of v.starOffsets) {
-            const x = cx + off.dx * scale;
-            const y = cy + off.dy * scale;
-            if (p.dist(mx, my, x, y) < 22)
-              return { starId: off.id, constellationId: null as string | null };
-          }
-        }
+      if (!selectedId) return null;
+      const v = constellationMap.get(selectedId);
+      if (!v) return null;
+      const { cx, cy, scale } = getConstellationDrawInfo(v);
+      for (const off of v.starOffsets) {
+        const x = cx + off.dx * scale;
+        const y = cy + off.dy * scale;
+        if (p.dist(mx, my, x, y) < 22) return off.id;
       }
+      return null;
+    }
+
+    // Shared forgiving hit-test used by hover and click so they never disagree.
+    function pickConstellation(
+      mx: number,
+      my: number,
+    ): { id: string; cx: number; cy: number } | null {
+      let best: { id: string; cx: number; cy: number; d: number } | null = null;
       for (const v of constellationMap.values()) {
         const { cx, cy, scale } = getConstellationDrawInfo(v);
-        if (p.dist(mx, my, cx, cy) < scale * 1.1) {
-          return { starId: null as string | null, constellationId: v.id };
+        const d = p.dist(mx, my, cx, cy);
+        let candidate = d <= scale * 1.15;
+        if (!candidate) {
+          for (const off of v.starOffsets) {
+            const sx = cx + off.dx * scale;
+            const sy = cy + off.dy * scale;
+            if (p.dist(mx, my, sx, sy) <= scale * 0.45) {
+              candidate = true;
+              break;
+            }
+          }
+        }
+        if (candidate && (!best || d < best.d)) {
+          best = { id: v.id, cx, cy, d };
         }
       }
-      return { starId: null as string | null, constellationId: null as string | null };
+      return best ? { id: best.id, cx: best.cx, cy: best.cy } : null;
     }
+
 
     p.setup = () => {
       const parent = (p as unknown as { _userNode: HTMLElement })._userNode;
@@ -409,7 +445,7 @@ export function createSketch(getProps: GetProps) {
       // Wrapper is pointer-events: none so HTML overlays always win. The
       // canvas itself opts back in so p5 can still receive star/cluster
       // clicks in empty areas.
-      const canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
+      canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
       if (canvasEl) canvasEl.style.pointerEvents = "auto";
       p.colorMode(p.HSB, 360, 100, 100, 100);
       rebuildBgStars();
@@ -437,6 +473,41 @@ export function createSketch(getProps: GetProps) {
       }
     };
 
+    function clearHover() {
+      if (hoveredId !== null) {
+        hoveredId = null;
+        if (canvasEl) canvasEl.style.cursor = "default";
+        getProps().onHoverChange?.(null);
+      }
+    }
+
+    p.mouseMoved = (event?: MouseEvent | PointerEvent) => {
+      const props = getProps();
+      if (props.mode !== "observe") {
+        clearHover();
+        return;
+      }
+      const target = (event?.target as HTMLElement | null) ?? null;
+      if (target && target.closest('[data-html-overlay="true"]')) {
+        clearHover();
+        return;
+      }
+      const mx = p.mouseX;
+      const my = p.mouseY;
+      if (mx < 0 || my < 0 || mx > p.width || my > p.height) {
+        clearHover();
+        return;
+      }
+      const hit = pickConstellation(mx, my);
+      if (!hit) {
+        clearHover();
+        return;
+      }
+      hoveredId = hit.id;
+      if (canvasEl) canvasEl.style.cursor = "pointer";
+      props.onHoverChange?.({ id: hit.id, x: mx, y: my });
+    };
+
     p.mousePressed = (event?: MouseEvent | PointerEvent) => {
       const target = (event?.target as HTMLElement | null) ?? null;
       if (target && target.closest('[data-html-overlay="true"]')) return;
@@ -450,19 +521,21 @@ export function createSketch(getProps: GetProps) {
         if (sid && props.onStarClick) props.onStarClick(sid);
         return;
       }
-      const hit = hitTestConstellation(mx, my);
-      if (hit.starId && props.onStarClick) {
-        props.onStarClick(hit.starId);
+      const starHit = hitTestSelectedStar(mx, my);
+      if (starHit && props.onStarClick) {
+        props.onStarClick(starHit);
         return;
       }
-      if (hit.constellationId && props.onConstellationClick) {
-        props.onConstellationClick(hit.constellationId);
+      const hit = pickConstellation(mx, my);
+      if (hit && props.onConstellationClick) {
+        props.onConstellationClick(hit.id);
         return;
       }
       if (props.selectedConstellationId && props.onConstellationClick) {
         props.onConstellationClick(null);
       }
     };
+
 
     (p as unknown as { __resize: (w: number, h: number) => void }).__resize = (
       w: number,
