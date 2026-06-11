@@ -22,6 +22,7 @@ function formatTime(s: number) {
 }
 
 export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
+  const mic = useMicLevel();
   const [supported, setSupported] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -112,6 +113,7 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
         if (peak > peakRef.current) peakRef.current = peak;
         sumRef.current += rms;
         samplesRef.current += 1;
+        mic.publish(rms);
         meterRafRef.current = requestAnimationFrame(tick);
       };
       meterRafRef.current = requestAnimationFrame(tick);
@@ -215,12 +217,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="relative flex h-80 w-80 items-center justify-center">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <WaveformCanvas
-            analyser={analyserState}
-            active={phase === "recording"}
-          />
-        </div>
         <button
           onClick={() => {
             if (phase === "idle") startRecording();
