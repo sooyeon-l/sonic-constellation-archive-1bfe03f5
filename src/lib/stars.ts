@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const QUESTION_TEXT =
   "What sound do you wish you could hear one more time?";
 
+export const MIN_CONSTELLATION_STARS = 3;
+export const MAX_CONSTELLATION_STARS = 7;
+
 export const STAR_COLORS = [
   "#fef3c7",
   "#fde68a",
@@ -13,6 +16,19 @@ export const STAR_COLORS = [
   "#67e8f9",
   "#86efac",
 ];
+
+export type ConstellationStatus =
+  | "pending_synthesis"
+  | "synthesizing"
+  | "ready"
+  | "failed";
+
+export const STATUS_LABELS: Record<ConstellationStatus, string> = {
+  pending_synthesis: "Waiting for Max synthesis",
+  synthesizing: "Max is synthesizing",
+  ready: "Synthesized sound ready",
+  failed: "Synthesis failed",
+};
 
 export interface StarRow {
   id: string;
@@ -35,7 +51,14 @@ export interface ConstellationRow {
   id: string;
   title: string;
   question_text: string;
+  status: ConstellationStatus;
+  synthesis_params: unknown;
+  mood_params: unknown;
+  synth_audio_url: string | null;
+  synth_audio_path: string | null;
+  error_message: string | null;
   created_at: string;
+  ready_at: string | null;
 }
 
 export interface ConstellationWithStars extends ConstellationRow {
@@ -61,6 +84,9 @@ export function randomPosition() {
   };
 }
 
+const CONSTELLATION_COLUMNS =
+  "id, title, question_text, status, synthesis_params, mood_params, synth_audio_url, synth_audio_path, error_message, created_at, ready_at";
+
 export async function fetchStars(): Promise<StarRow[]> {
   const { data, error } = await supabase
     .from("stars")
@@ -77,7 +103,7 @@ export async function fetchConstellations(): Promise<ConstellationWithStars[]> {
     await Promise.all([
       supabase
         .from("constellations")
-        .select("id, title, question_text, created_at")
+        .select(CONSTELLATION_COLUMNS)
         .order("created_at", { ascending: true }),
       supabase
         .from("stars")
@@ -102,27 +128,99 @@ export async function fetchConstellations(): Promise<ConstellationWithStars[]> {
   }));
 }
 
+function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
+}
+
+/**
+ * Basic per-star synthesis parameters derived from recording metadata.
+ * Max can use these as a starting point for voice mapping.
+ */
+export function buildSynthesisParams(stars: StarRow[]) {
+  return {
+    version: 1,
+    voice_count: stars.length,
+    voices: stars.map((s, index) => ({
+      star_id: s.id,
+      index,
+      audio_url: s.audio_url,
+      audio_path: s.audio_path,
+      mime_type: s.mime_type,
+      duration_seconds: s.duration_seconds,
+      // x position (0..1) -> stereo pan (-1..1)
+      pan: Number((s.x_position * 2 - 1).toFixed(3)),
+      // y position (0 = top) -> brightness/pitch hint (0..1, top = brighter)
+      pitch: Number((1 - s.y_position).toFixed(3)),
+      // average volume -> gain hint (0.2..1)
+      gain: Number(clamp(0.2 + (s.volume_average ?? 0.3) * 2, 0.2, 1).toFixed(3)),
+      peak: s.volume_peak,
+      color: s.color,
+    })),
+  };
+}
+
+/**
+ * Basic aggregate mood parameters derived from star metadata.
+ */
+export function buildMoodParams(stars: StarRow[]) {
+  const n = Math.max(1, stars.length);
+  const totalDuration = stars.reduce((a, s) => a + s.duration_seconds, 0);
+  const avgVolume =
+    stars.reduce((a, s) => a + (s.volume_average ?? 0), 0) / n;
+  const maxPeak = stars.reduce((a, s) => Math.max(a, s.volume_peak ?? 0), 0);
+  const avgBrightness = stars.reduce((a, s) => a + (1 - s.y_position), 0) / n;
+  return {
+    version: 1,
+    star_count: stars.length,
+    total_duration_seconds: Number(totalDuration.toFixed(2)),
+    // stars per second of source material — denser = busier texture
+    density: Number((stars.length / Math.max(1, totalDuration)).toFixed(4)),
+    energy: Number(clamp(avgVolume * 3, 0, 1).toFixed(3)),
+    peak: Number(maxPeak.toFixed(3)),
+    brightness: Number(avgBrightness.toFixed(3)),
+    palette: stars.map((s) => s.color),
+  };
+}
+
 export async function createConstellationFromStars(
-  starIds: string[],
+  stars: StarRow[],
   title?: string,
 ): Promise<ConstellationRow> {
-  if (starIds.length === 0) throw new Error("No stars to constellate.");
+  if (stars.length < MIN_CONSTELLATION_STARS) {
+    throw new Error(
+      `At least ${MIN_CONSTELLATION_STARS} stars are needed to form a constellation.`,
+    );
+  }
+  if (stars.length > MAX_CONSTELLATION_STARS) {
+    throw new Error(
+      `A constellation can hold at most ${MAX_CONSTELLATION_STARS} stars.`,
+    );
+  }
   const finalTitle =
     title?.trim() ||
     `Constellation ${new Date().toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}`;
   const { data: con, error: cErr } = await supabase
     .from("constellations")
-    .insert({ title: finalTitle, question_text: QUESTION_TEXT })
-    .select()
+    .insert({
+      title: finalTitle,
+      question_text: QUESTION_TEXT,
+      status: "pending_synthesis",
+      synthesis_params: buildSynthesisParams(stars),
+      mood_params: buildMoodParams(stars),
+    })
+    .select(CONSTELLATION_COLUMNS)
     .single();
   if (cErr || !con) throw cErr ?? new Error("Failed to create constellation.");
   const { error: uErr } = await supabase
     .from("stars")
     .update({ constellation_id: con.id })
-    .in("id", starIds)
+    .in(
+      "id",
+      stars.map((s) => s.id),
+    )
     .is("constellation_id", null);
   if (uErr) throw uErr;
-  return con as ConstellationRow;
+  return con as unknown as ConstellationRow;
 }
 
 export async function uploadAndInsertStar(
@@ -147,17 +245,30 @@ export async function uploadAndInsertStar(
     .upload(path, blob, { contentType: meta.mimeType, upsert: false });
   if (upErr) throw upErr;
 
-  // Private bucket: produce a long-lived signed URL for playback + Max consumption.
-  const { data: signed, error: signErr } = await supabase.storage
+  // Stable public URL (no token, never expires). Requires the star-audio
+  // bucket to be public. If the workspace still blocks public buckets, the
+  // public URL won't resolve, so fall back to a long-lived signed URL until
+  // public buckets are enabled (the Max panel warns when this happens).
+  const { data: pub } = supabase.storage
     .from("star-audio")
-    .createSignedUrl(path, 60 * 60 * 24 * 365);
-  if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
+    .getPublicUrl(path);
+  let audioUrl = pub.publicUrl;
+  try {
+    const head = await fetch(audioUrl, { method: "HEAD" });
+    if (!head.ok) throw new Error("public URL not accessible");
+  } catch {
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("star-audio")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
+    audioUrl = signed.signedUrl;
+  }
 
   const pos = randomPosition();
   const row = {
     id,
     question_text: QUESTION_TEXT,
-    audio_url: signed.signedUrl,
+    audio_url: audioUrl,
     audio_path: path,
     mime_type: meta.mimeType,
     duration_seconds: Number(meta.durationSeconds.toFixed(2)),
