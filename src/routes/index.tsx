@@ -197,7 +197,6 @@ function Index() {
     setSaving(true);
     setSaveError(null);
     setForming(true);
-    await new Promise((r) => setTimeout(r, 800));
     try {
       await createConstellationFromStars(activeStars);
       setActiveStars([]);
@@ -277,13 +276,7 @@ function Index() {
           </TabsList>
 
           <TabsContent value="input" className="pt-6">
-            <div
-              className={`pointer-events-none mx-auto flex w-full flex-col items-center gap-6 transition ${
-                forming
-                  ? "ring-2 ring-amber-200/60 shadow-[0_0_60px_rgba(252,211,77,0.35)] rounded-lg"
-                  : ""
-              }`}
-            >
+            <div className="pointer-events-none mx-auto flex w-full flex-col items-center gap-8">
               <div className="pointer-events-auto">
                 <Recorder
                   anchorRef={recorderAnchorRef}
@@ -293,7 +286,7 @@ function Index() {
                 />
               </div>
 
-              <div className="pointer-events-auto flex flex-col items-center gap-2">
+              <div className="pointer-events-auto mt-2 flex flex-col items-center gap-2">
                 <p className="text-xs text-muted-foreground">
                   {activeStars.length === 0
                     ? `Create a constellation after ${MIN_CONSTELLATION_STARS} stars`
