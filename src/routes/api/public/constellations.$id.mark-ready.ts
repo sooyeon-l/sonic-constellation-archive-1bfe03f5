@@ -2,12 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
 const BodySchema = z.object({
-  synth_audio_url: z.string().url().min(1).max(2000),
   synth_audio_path: z
     .string()
     .min(1)
     .max(500)
     .regex(/^[a-zA-Z0-9/._-]+$/),
+  synth_audio_url: z.string().url().min(1).max(2000).nullish(),
 });
 
 export const Route = createFileRoute(
@@ -38,7 +38,7 @@ export const Route = createFileRoute(
         }
         try {
           return await api.transitionConstellation(params.id, "ready", {
-            synth_audio_url: parsed.data.synth_audio_url,
+            synth_audio_url: parsed.data.synth_audio_url ?? null,
             synth_audio_path: parsed.data.synth_audio_path,
             ready_at: new Date().toISOString(),
           });

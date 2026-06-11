@@ -83,7 +83,7 @@ export function ConstellationArchive({
 
   if (expanded) {
     const synthPlayable =
-      expanded.status === "ready" && Boolean(expanded.synth_audio_url);
+      expanded.status === "ready" && Boolean(expanded.synth_audio_path);
     const synthPlaying = activeStarId === `synth:${expanded.id}`;
     return (
       <div className="space-y-3">

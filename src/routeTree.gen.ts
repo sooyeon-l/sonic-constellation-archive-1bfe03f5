@@ -16,6 +16,7 @@ import { Route as ApiPublicStarsLatestRouteImport } from './routes/api/public/st
 import { Route as ApiPublicConstellationsPendingRouteImport } from './routes/api/public/constellations.pending'
 import { Route as ApiPublicConstellationsCreateRouteImport } from './routes/api/public/constellations.create'
 import { Route as ApiPublicConstellationsIdRouteImport } from './routes/api/public/constellations.$id'
+import { Route as ApiPublicConstellationsIdSynthAudioRouteImport } from './routes/api/public/constellations.$id.synth-audio'
 import { Route as ApiPublicConstellationsIdMarkSynthesizingRouteImport } from './routes/api/public/constellations.$id.mark-synthesizing'
 import { Route as ApiPublicConstellationsIdMarkReadyRouteImport } from './routes/api/public/constellations.$id.mark-ready'
 import { Route as ApiPublicConstellationsIdMarkFailedRouteImport } from './routes/api/public/constellations.$id.mark-failed'
@@ -58,6 +59,12 @@ const ApiPublicConstellationsIdRoute =
     path: '/$id',
     getParentRoute: () => ApiPublicConstellationsRoute,
   } as any)
+const ApiPublicConstellationsIdSynthAudioRoute =
+  ApiPublicConstellationsIdSynthAudioRouteImport.update({
+    id: '/synth-audio',
+    path: '/synth-audio',
+    getParentRoute: () => ApiPublicConstellationsIdRoute,
+  } as any)
 const ApiPublicConstellationsIdMarkSynthesizingRoute =
   ApiPublicConstellationsIdMarkSynthesizingRouteImport.update({
     id: '/mark-synthesizing',
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
   '/api/public/constellations/$id/mark-ready': typeof ApiPublicConstellationsIdMarkReadyRoute
   '/api/public/constellations/$id/mark-synthesizing': typeof ApiPublicConstellationsIdMarkSynthesizingRoute
+  '/api/public/constellations/$id/synth-audio': typeof ApiPublicConstellationsIdSynthAudioRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
   '/api/public/constellations/$id/mark-ready': typeof ApiPublicConstellationsIdMarkReadyRoute
   '/api/public/constellations/$id/mark-synthesizing': typeof ApiPublicConstellationsIdMarkSynthesizingRoute
+  '/api/public/constellations/$id/synth-audio': typeof ApiPublicConstellationsIdSynthAudioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +122,7 @@ export interface FileRoutesById {
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
   '/api/public/constellations/$id/mark-ready': typeof ApiPublicConstellationsIdMarkReadyRoute
   '/api/public/constellations/$id/mark-synthesizing': typeof ApiPublicConstellationsIdMarkSynthesizingRoute
+  '/api/public/constellations/$id/synth-audio': typeof ApiPublicConstellationsIdSynthAudioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations/$id/mark-failed'
     | '/api/public/constellations/$id/mark-ready'
     | '/api/public/constellations/$id/mark-synthesizing'
+    | '/api/public/constellations/$id/synth-audio'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations/$id/mark-failed'
     | '/api/public/constellations/$id/mark-ready'
     | '/api/public/constellations/$id/mark-synthesizing'
+    | '/api/public/constellations/$id/synth-audio'
   id:
     | '__root__'
     | '/'
@@ -151,6 +163,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations/$id/mark-failed'
     | '/api/public/constellations/$id/mark-ready'
     | '/api/public/constellations/$id/mark-synthesizing'
+    | '/api/public/constellations/$id/synth-audio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicConstellationsIdRouteImport
       parentRoute: typeof ApiPublicConstellationsRoute
     }
+    '/api/public/constellations/$id/synth-audio': {
+      id: '/api/public/constellations/$id/synth-audio'
+      path: '/synth-audio'
+      fullPath: '/api/public/constellations/$id/synth-audio'
+      preLoaderRoute: typeof ApiPublicConstellationsIdSynthAudioRouteImport
+      parentRoute: typeof ApiPublicConstellationsIdRoute
+    }
     '/api/public/constellations/$id/mark-synthesizing': {
       id: '/api/public/constellations/$id/mark-synthesizing'
       path: '/mark-synthesizing'
@@ -238,6 +258,7 @@ interface ApiPublicConstellationsIdRouteChildren {
   ApiPublicConstellationsIdMarkFailedRoute: typeof ApiPublicConstellationsIdMarkFailedRoute
   ApiPublicConstellationsIdMarkReadyRoute: typeof ApiPublicConstellationsIdMarkReadyRoute
   ApiPublicConstellationsIdMarkSynthesizingRoute: typeof ApiPublicConstellationsIdMarkSynthesizingRoute
+  ApiPublicConstellationsIdSynthAudioRoute: typeof ApiPublicConstellationsIdSynthAudioRoute
 }
 
 const ApiPublicConstellationsIdRouteChildren: ApiPublicConstellationsIdRouteChildren =
@@ -248,6 +269,8 @@ const ApiPublicConstellationsIdRouteChildren: ApiPublicConstellationsIdRouteChil
       ApiPublicConstellationsIdMarkReadyRoute,
     ApiPublicConstellationsIdMarkSynthesizingRoute:
       ApiPublicConstellationsIdMarkSynthesizingRoute,
+    ApiPublicConstellationsIdSynthAudioRoute:
+      ApiPublicConstellationsIdSynthAudioRoute,
   }
 
 const ApiPublicConstellationsIdRouteWithChildren =
