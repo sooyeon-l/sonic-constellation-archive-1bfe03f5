@@ -243,9 +243,12 @@ function Index() {
           activeStars={activeStars}
           constellations={archive}
           selectedConstellationId={selectedConstellationId}
+          centerX={tab === "input" ? (anchor?.x ?? null) : null}
+          centerY={tab === "input" ? (anchor?.y ?? null) : null}
           onStarClick={handleStarClick}
           onConstellationClick={handleConstellationClick}
         />
+
       </div>
 
       {/* HTML overlay layer — controls, status, accessibility. */}
