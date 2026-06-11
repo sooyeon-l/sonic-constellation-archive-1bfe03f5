@@ -113,7 +113,7 @@ export async function fetchStars(): Promise<StarRow[]> {
   const { data, error } = await supabase
     .from("stars")
     .select(
-      "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at, constellation_id",
+      "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, radial_distance, angle, color, created_at, constellation_id",
     )
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -130,7 +130,7 @@ export async function fetchConstellations(): Promise<ConstellationWithStars[]> {
       supabase
         .from("stars")
         .select(
-          "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, color, created_at, constellation_id",
+          "id, question_text, audio_url, audio_path, max_audio_url, mime_type, duration_seconds, volume_peak, volume_average, x_position, y_position, radial_distance, angle, color, created_at, constellation_id",
         )
         .not("constellation_id", "is", null)
         .order("created_at", { ascending: true }),
