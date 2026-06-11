@@ -41,6 +41,7 @@ function Index() {
   const [tab, setTab] = useState<"input" | "observe">("input");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showMaxPanel, setShowMaxPanel] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const reloadArchive = useCallback(async () => {
@@ -55,6 +56,12 @@ function Index() {
   useEffect(() => {
     reloadArchive();
   }, [reloadArchive]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setShowMaxPanel(params.get("debug") === "max");
+  }, []);
 
   // Poll while any constellation is waiting on Max so status badges update live.
   useEffect(() => {
@@ -215,7 +222,7 @@ function Index() {
           className="hidden"
         />
 
-        <MaxDataPanel />
+        {showMaxPanel && <MaxDataPanel />}
       </div>
     </div>
   );
