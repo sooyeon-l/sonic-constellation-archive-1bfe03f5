@@ -1,19 +1,30 @@
 import { useEffect, useRef } from "react";
+import { useMicLevel } from "@/lib/mic-level-context";
 
 interface Props {
   analyser: AnalyserNode | null;
   active: boolean;
 }
 
+// 2D noise-ish function — cheap pseudo-perlin via summed sines.
+function pseudoNoise(x: number, y: number, t: number) {
+  return (
+    Math.sin(x * 1.7 + t * 0.9) * 0.5 +
+    Math.sin(y * 2.1 - t * 1.1) * 0.3 +
+    Math.sin((x + y) * 1.3 + t * 0.6) * 0.2
+  );
+}
+
 /**
- * Circular wobble waveform inspired by the reference p5 sketch.
- * Uses the Web Audio AnalyserNode tied to the same MediaStream as MediaRecorder.
- * Visual only — does not touch the recorded audio.
+ * p5-prototype-style wobble ring around the recorder. Driven by the same
+ * AnalyserNode the Recorder already creates. Also broadcasts the smoothed
+ * level into MicLevelContext so other visuals (StarField) can react.
  */
 export function WaveformCanvas({ analyser, active }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const smoothedRef = useRef(0);
+  const mic = useMicLevel();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,9 +38,10 @@ export function WaveformCanvas({ analyser, active }: Props) {
     canvas.height = size * dpr;
     canvas.style.width = `${size}px`;
     canvas.style.height = `${size}px`;
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const buf = analyser ? new Uint8Array(analyser.fftSize) : null;
+    const circleDiv = 350;
 
     const draw = () => {
       ctx.clearRect(0, 0, size, size);
@@ -45,44 +57,68 @@ export function WaveformCanvas({ analyser, active }: Props) {
         level = Math.sqrt(sum / buf.length);
       }
 
-      // Smoothing per reference sketch: smoothed = smoothed*0.92 + level*0.08
-      smoothedRef.current = smoothedRef.current * 0.92 + level * 0.08;
+      const threshold = 0.001;
+      const audioEnergy = Math.max(0, level - threshold);
+      // p5 prototype smoothing
+      smoothedRef.current = smoothedRef.current * 0.92 + audioEnergy * 0.08;
       const s = smoothedRef.current;
+      mic.publish(s);
 
       const cx = size / 2;
       const cy = size / 2;
-      const baseR = 70;
-      const wavePower = s * 180;
+      const baseRadius = size / 5;
+      // idle still has a tiny baseline so the ring never feels dead
+      const idleBoost = active ? 0 : 0.0015;
+      const wavePower = (s + idleBoost) * 300;
+      const t = performance.now() * 0.001;
 
-      // Outer glow ring
-      const grad = ctx.createRadialGradient(cx, cy, baseR * 0.6, cx, cy, baseR + wavePower + 60);
-      grad.addColorStop(0, `rgba(253, 230, 138, ${0.10 + s * 0.5})`);
-      grad.addColorStop(1, "rgba(253, 230, 138, 0)");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, baseR + wavePower + 60, 0, Math.PI * 2);
-      ctx.fill();
+      for (let i = 0; i < circleDiv; i++) {
+        const theta = (i * Math.PI * 2) / circleDiv;
+        const nx = Math.cos(theta) * 0.8 + 10;
+        const ny = Math.sin(theta) * 0.8 + 10;
+        const n = pseudoNoise(nx, ny, t * 0.6);
+        const wobble = n * wavePower * 0.6;
+        const radius = baseRadius + wobble;
 
-      // Wobbling ring
-      const points = 96;
-      ctx.beginPath();
-      for (let i = 0; i <= points; i++) {
-        const a = (i / points) * Math.PI * 2;
-        const noise =
-          Math.sin(a * 3 + performance.now() * 0.002) * (4 + wavePower * 0.4) +
-          Math.sin(a * 7 + performance.now() * 0.0035) * (3 + wavePower * 0.25);
-        const r = baseR + wavePower * 0.4 + noise;
-        const x = cx + Math.cos(a) * r;
-        const y = cy + Math.sin(a) * r;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        const dotR = 1.2;
+
+        const hue = 170 + ((theta / (Math.PI * 2)) * 80); // 170..250
+        ctx.fillStyle = `hsla(${hue}, 60%, 80%, 0.75)`;
+
+        const x1 = cx + radius * Math.cos(theta);
+        const y1 = cy + radius * Math.sin(theta);
+        ctx.beginPath();
+        ctx.arc(x1, y1, dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        const x2 = cx + radius * Math.cos(theta + Math.PI);
+        const y2 = cy + radius * Math.sin(theta + Math.PI);
+        ctx.beginPath();
+        ctx.arc(x2, y2, dotR, 0, Math.PI * 2);
+        ctx.fill();
+
+        const x3 = cx + radius * Math.cos(theta + Math.PI * 1.5);
+        const y3 = cy + radius * Math.sin(theta + Math.PI * 1.5);
+        ctx.beginPath();
+        ctx.arc(x3, y3, dotR, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.closePath();
-      ctx.strokeStyle = active
-        ? `rgba(252, 211, 77, ${0.7 + s * 0.3})`
-        : "rgba(148, 163, 184, 0.35)";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+
+      // soft outer glow
+      const glow = ctx.createRadialGradient(
+        cx,
+        cy,
+        baseRadius * 0.4,
+        cx,
+        cy,
+        baseRadius + wavePower + 60,
+      );
+      glow.addColorStop(0, `rgba(253, 230, 138, ${0.06 + s * 0.6})`);
+      glow.addColorStop(1, "rgba(253, 230, 138, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, baseRadius + wavePower + 60, 0, Math.PI * 2);
+      ctx.fill();
 
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -91,7 +127,7 @@ export function WaveformCanvas({ analyser, active }: Props) {
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     };
-  }, [analyser, active]);
+  }, [analyser, active, mic]);
 
   return <canvas ref={canvasRef} className="pointer-events-none" />;
 }
