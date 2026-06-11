@@ -5,6 +5,8 @@ import { Recorder } from "@/components/Recorder";
 import { ActiveSessionOverlay } from "@/components/ActiveSession";
 import { ConstellationArchive } from "@/components/ConstellationArchive";
 import { MaxDataPanel } from "@/components/MaxDataPanel";
+import { StarField } from "@/components/StarField";
+import { MicLevelProvider } from "@/lib/mic-level-context";
 import {
   createConstellationFromStars,
   fetchConstellations,
@@ -14,6 +16,7 @@ import {
   type ConstellationWithStars,
   type StarRow,
 } from "@/lib/stars";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
