@@ -72,7 +72,7 @@ function Index() {
       const el = recorderAnchorRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setAnchor({ x: r.left + r.width / 2, y: r.top + 160 /* button center */ });
+      setAnchor({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
     };
     measure();
     const ro = new ResizeObserver(measure);
