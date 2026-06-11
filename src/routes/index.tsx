@@ -438,8 +438,7 @@ function Index() {
                     Close
                   </button>
                 </div>
-                {selectedConstellation.status === "ready" &&
-                  selectedConstellation.synth_audio_path && (
+                {selectedConstellation.status === "ready" && (
                     <button
                       type="button"
                       onPointerDown={(e) => e.stopPropagation()}
