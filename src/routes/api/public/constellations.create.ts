@@ -69,12 +69,17 @@ export const Route = createFileRoute("/api/public/constellations/create")({
         }
 
         const starRows = stars as Parameters<typeof buildSynthesisParams>[0];
+        const kstFmt = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Seoul",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
         const finalTitle =
-          title ??
-          `Constellation ${new Date().toLocaleString(undefined, {
-            dateStyle: "short",
-            timeStyle: "short",
-          })}`;
+          title ?? `Constellation ${kstFmt.format(new Date())} KST`;
 
         const { data: con, error: cErr } = await supabaseAdmin
           .from("constellations")

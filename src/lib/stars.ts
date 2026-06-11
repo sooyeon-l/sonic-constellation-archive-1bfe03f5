@@ -75,6 +75,17 @@ export interface RecordingMeta {
   mimeType: string;
 }
 
+export const KST_FMT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+export const formatKST = (iso: string) => `${KST_FMT.format(new Date(iso))} KST`;
+
 export function randomColor() {
   return STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
 }
