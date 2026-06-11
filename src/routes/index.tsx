@@ -419,7 +419,8 @@ function Index() {
         />
 
         {showMaxPanel && (
-          <div className="pointer-events-auto">
+          <div className="pointer-events-auto" data-html-overlay="true">
+
             <MaxDataPanel />
           </div>
         )}
