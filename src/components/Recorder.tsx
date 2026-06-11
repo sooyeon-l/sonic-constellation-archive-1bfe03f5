@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { WaveformCanvas } from "./WaveformCanvas";
+import { useMicLevel } from "@/lib/mic-level-context";
 import {
   isRecordingSupported,
   uploadAndInsertStar,
@@ -22,6 +22,7 @@ function formatTime(s: number) {
 }
 
 export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
+  const mic = useMicLevel();
   const [supported, setSupported] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -42,7 +43,7 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   const blobRef = useRef<Blob | null>(null);
   const metaRef = useRef<RecordingMeta | null>(null);
 
-  const [analyserState, setAnalyserState] = useState<AnalyserNode | null>(null);
+  
 
   useEffect(() => {
     setSupported(isRecordingSupported());
@@ -66,7 +67,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
       audioCtxRef.current = null;
     }
     analyserRef.current = null;
-    setAnalyserState(null);
   };
 
   useEffect(() => () => cleanup(), []);
@@ -96,7 +96,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
       analyser.fftSize = 1024;
       src.connect(analyser);
       analyserRef.current = analyser;
-      setAnalyserState(analyser);
 
       const buf = new Uint8Array(analyser.fftSize);
       const tick = () => {
@@ -112,6 +111,7 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
         if (peak > peakRef.current) peakRef.current = peak;
         sumRef.current += rms;
         samplesRef.current += 1;
+        mic.publish(rms);
         meterRafRef.current = requestAnimationFrame(tick);
       };
       meterRafRef.current = requestAnimationFrame(tick);
@@ -215,12 +215,6 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="relative flex h-80 w-80 items-center justify-center">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <WaveformCanvas
-            analyser={analyserState}
-            active={phase === "recording"}
-          />
-        </div>
         <button
           onClick={() => {
             if (phase === "idle") startRecording();
