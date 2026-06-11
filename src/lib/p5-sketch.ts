@@ -189,37 +189,66 @@ export function createSketch(getProps: GetProps) {
       const threshold = 0.001;
       const audioEnergy = Math.max(0, vol - threshold);
       smoothed = smoothed * 0.92 + audioEnergy * 0.08;
-      const wavePower = reduced ? 0 : smoothed * 300;
+      const wavePower = reduced ? 0 : smoothed * 600;
       const baseRadius = Math.min(p.width, p.height) / 6;
       const { cx, cy } = getInputCenter();
       const nz = reduced ? 0 : p.frameCount * 0.008;
 
+      // Three rotated layers, each with its own noise offsets and freq so
+      // they don't trace the same shape — yields the organic look.
+      const layers: Array<{
+        rot: number;
+        ox: number;
+        oy: number;
+        nzMul: number;
+      }> = [
+        { rot: 0, ox: 10, oy: 10, nzMul: 1.0 },
+        { rot: Math.PI, ox: 40, oy: -15, nzMul: 1.3 },
+        { rot: Math.PI * 1.5, ox: -25, oy: 55, nzMul: 0.7 },
+      ];
+
       p.noStroke();
       for (let i = 0; i < circleDiv; i++) {
         const theta = (i * Math.PI * 2) / circleDiv;
-        const n =
-          p.map(
-            p.noise(Math.cos(theta) * 0.8 + 10, Math.sin(theta) * 0.8 + 10, nz),
-            0,
-            1,
-            -1,
-            1,
-          );
-        const wobble = n * wavePower * 5;
-        const radius = baseRadius + wobble;
-
         p.fill(p.map(theta, 0, Math.PI * 2, 170, 250), 25, 100, 75);
 
-        const x1 = cx + radius * Math.cos(theta);
-        const y1 = cy + radius * Math.sin(theta);
-        const x2 = cx + radius * Math.cos(theta + Math.PI);
-        const y2 = cy + radius * Math.sin(theta + Math.PI);
-        const x3 = cx + radius * Math.cos(theta + Math.PI * 1.5);
-        const y3 = cy + radius * Math.sin(theta + Math.PI * 1.5);
-
-        p.ellipse(x1, y1, 1.5);
-        p.ellipse(x2, y2, 1.5);
-        p.ellipse(x3, y3, 1.5);
+        for (const L of layers) {
+          const a = theta + L.rot;
+          const cs = Math.cos(a);
+          const sn = Math.sin(a);
+          // resting deformation — independent of volume so quiet state is
+          // still irregular
+          const rest =
+            (p.noise(cs * 1.6 + L.ox + 30, sn * 1.6 + L.oy + 30, nz * 0.6 * L.nzMul) *
+              2 -
+              1) *
+            baseRadius *
+            0.18;
+          // high-freq audio-driven wobble
+          const hi =
+            p.map(
+              p.noise(cs * 0.8 + L.ox, sn * 0.8 + L.oy, nz * L.nzMul),
+              0,
+              1,
+              -1,
+              1,
+            ) * wavePower * 5;
+          // low-freq harmonic, also audio-driven — deforms overall silhouette
+          const lo =
+            p.map(
+              p.noise(cs * 0.3 + L.ox * 0.5, sn * 0.3 + L.oy * 0.5, nz * 0.4 * L.nzMul),
+              0,
+              1,
+              -1,
+              1,
+            ) *
+            wavePower *
+            2;
+          const radius = baseRadius + rest + hi + lo;
+          const x = cx + radius * cs;
+          const y = cy + radius * sn;
+          p.ellipse(x, y, 1.5);
+        }
       }
     }
 
