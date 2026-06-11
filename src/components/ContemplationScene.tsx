@@ -204,9 +204,8 @@ export function ContemplationScene({
             const bigRadius = minDim * 0.36;
             const radius = smallRadius + (bigRadius - smallRadius) * progress;
 
-            const dim =
-              expandedId && !isExpanded && !isAnimating ? 0.25 : 1 - 0.4 * (1 - progress) * (expandedId === null ? 0 : 0);
             const opacity = expandedId && !isExpanded ? 0.25 : 1;
+
 
             // Compute child star positions (cluster local 0..1 -> ring)
             const pts = c.stars.map((s, i) => {
