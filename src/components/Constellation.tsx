@@ -44,8 +44,7 @@ export function Constellation({ stars, onPlay, activeId }: Props) {
               />
               <circle cx={cx} cy={cy} r={isActive ? 5 : 3.5} fill={s.color} />
               <title>
-                {new Date(s.created_at).toLocaleString()} ·{" "}
-                {s.duration_seconds.toFixed(1)}s
+                {formatKST(s.created_at)} · {s.duration_seconds.toFixed(1)}s
               </title>
             </g>
           );
