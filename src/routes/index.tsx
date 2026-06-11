@@ -197,7 +197,6 @@ function Index() {
     setSaving(true);
     setSaveError(null);
     setForming(true);
-    await new Promise((r) => setTimeout(r, 800));
     try {
       await createConstellationFromStars(activeStars);
       setActiveStars([]);
