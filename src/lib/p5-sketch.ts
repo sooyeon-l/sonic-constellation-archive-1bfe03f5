@@ -380,7 +380,7 @@ export function createSketch(getProps: GetProps) {
           p.pop();
         }
 
-        const hoverBoost = isHovered ? 15 : 0;
+        const hoverBoost = isHovered ? 8 : 0;
         p.push();
         p.noFill();
         p.stroke(45, 70, 100, (isSelected ? 95 : 60 + hoverBoost) * alphaMul);
