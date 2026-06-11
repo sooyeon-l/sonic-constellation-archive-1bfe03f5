@@ -14,6 +14,7 @@ import { Route as ApiPublicStarsRouteImport } from './routes/api/public/stars'
 import { Route as ApiPublicConstellationsRouteImport } from './routes/api/public/constellations'
 import { Route as ApiPublicStarsLatestRouteImport } from './routes/api/public/stars.latest'
 import { Route as ApiPublicConstellationsPendingRouteImport } from './routes/api/public/constellations.pending'
+import { Route as ApiPublicConstellationsCreateRouteImport } from './routes/api/public/constellations.create'
 import { Route as ApiPublicConstellationsIdRouteImport } from './routes/api/public/constellations.$id'
 import { Route as ApiPublicConstellationsIdMarkSynthesizingRouteImport } from './routes/api/public/constellations.$id.mark-synthesizing'
 import { Route as ApiPublicConstellationsIdMarkReadyRouteImport } from './routes/api/public/constellations.$id.mark-ready'
@@ -43,6 +44,12 @@ const ApiPublicConstellationsPendingRoute =
   ApiPublicConstellationsPendingRouteImport.update({
     id: '/pending',
     path: '/pending',
+    getParentRoute: () => ApiPublicConstellationsRoute,
+  } as any)
+const ApiPublicConstellationsCreateRoute =
+  ApiPublicConstellationsCreateRouteImport.update({
+    id: '/create',
+    path: '/create',
     getParentRoute: () => ApiPublicConstellationsRoute,
   } as any)
 const ApiPublicConstellationsIdRoute =
@@ -75,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/api/public/constellations': typeof ApiPublicConstellationsRouteWithChildren
   '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
   '/api/public/constellations/$id': typeof ApiPublicConstellationsIdRouteWithChildren
+  '/api/public/constellations/create': typeof ApiPublicConstellationsCreateRoute
   '/api/public/constellations/pending': typeof ApiPublicConstellationsPendingRoute
   '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
@@ -86,6 +94,7 @@ export interface FileRoutesByTo {
   '/api/public/constellations': typeof ApiPublicConstellationsRouteWithChildren
   '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
   '/api/public/constellations/$id': typeof ApiPublicConstellationsIdRouteWithChildren
+  '/api/public/constellations/create': typeof ApiPublicConstellationsCreateRoute
   '/api/public/constellations/pending': typeof ApiPublicConstellationsPendingRoute
   '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
@@ -98,6 +107,7 @@ export interface FileRoutesById {
   '/api/public/constellations': typeof ApiPublicConstellationsRouteWithChildren
   '/api/public/stars': typeof ApiPublicStarsRouteWithChildren
   '/api/public/constellations/$id': typeof ApiPublicConstellationsIdRouteWithChildren
+  '/api/public/constellations/create': typeof ApiPublicConstellationsCreateRoute
   '/api/public/constellations/pending': typeof ApiPublicConstellationsPendingRoute
   '/api/public/stars/latest': typeof ApiPublicStarsLatestRoute
   '/api/public/constellations/$id/mark-failed': typeof ApiPublicConstellationsIdMarkFailedRoute
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations'
     | '/api/public/stars'
     | '/api/public/constellations/$id'
+    | '/api/public/constellations/create'
     | '/api/public/constellations/pending'
     | '/api/public/stars/latest'
     | '/api/public/constellations/$id/mark-failed'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations'
     | '/api/public/stars'
     | '/api/public/constellations/$id'
+    | '/api/public/constellations/create'
     | '/api/public/constellations/pending'
     | '/api/public/stars/latest'
     | '/api/public/constellations/$id/mark-failed'
@@ -133,6 +145,7 @@ export interface FileRouteTypes {
     | '/api/public/constellations'
     | '/api/public/stars'
     | '/api/public/constellations/$id'
+    | '/api/public/constellations/create'
     | '/api/public/constellations/pending'
     | '/api/public/stars/latest'
     | '/api/public/constellations/$id/mark-failed'
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/pending'
       fullPath: '/api/public/constellations/pending'
       preLoaderRoute: typeof ApiPublicConstellationsPendingRouteImport
+      parentRoute: typeof ApiPublicConstellationsRoute
+    }
+    '/api/public/constellations/create': {
+      id: '/api/public/constellations/create'
+      path: '/create'
+      fullPath: '/api/public/constellations/create'
+      preLoaderRoute: typeof ApiPublicConstellationsCreateRouteImport
       parentRoute: typeof ApiPublicConstellationsRoute
     }
     '/api/public/constellations/$id': {
@@ -237,12 +257,14 @@ const ApiPublicConstellationsIdRouteWithChildren =
 
 interface ApiPublicConstellationsRouteChildren {
   ApiPublicConstellationsIdRoute: typeof ApiPublicConstellationsIdRouteWithChildren
+  ApiPublicConstellationsCreateRoute: typeof ApiPublicConstellationsCreateRoute
   ApiPublicConstellationsPendingRoute: typeof ApiPublicConstellationsPendingRoute
 }
 
 const ApiPublicConstellationsRouteChildren: ApiPublicConstellationsRouteChildren =
   {
     ApiPublicConstellationsIdRoute: ApiPublicConstellationsIdRouteWithChildren,
+    ApiPublicConstellationsCreateRoute: ApiPublicConstellationsCreateRoute,
     ApiPublicConstellationsPendingRoute: ApiPublicConstellationsPendingRoute,
   }
 
@@ -271,3 +293,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
