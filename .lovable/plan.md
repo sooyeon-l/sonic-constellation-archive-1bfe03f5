@@ -1,38 +1,52 @@
-## Refine hover glow — outline-only, barely-there
+# Fix recording upload flow
 
-Replace the two big radial ellipses behind hovered constellations with a soft halo that traces the constellation's line/star shape.
+## Root cause
 
-### `src/lib/p5-sketch.ts` — `drawConstellations`
+The "Fix all security issues" migration dropped the `public read star-audio` policy on `storage.objects`. After that:
 
-Remove the current hover halo block:
-```ts
-if (isHovered) {
-  p.push();
-  p.noStroke();
-  p.fill(45, 60, 100, 12 + pulse * 10);
-  p.ellipse(cx, cy, scale * 3.6);
-  p.fill(45, 70, 100, 18 + pulse * 14);
-  p.ellipse(cx, cy, scale * 2.4);
-  p.pop();
-}
+1. `uploadAndInsertStar` in `src/lib/stars.ts` still calls `supabase.storage.getPublicUrl(...)` then does a `HEAD` on it. The bucket is private → HEAD returns 400 ("Object not found"), which is logged as a console error even though the code catches it.
+2. The fallback `createSignedUrl` requires a `SELECT` policy on `storage.objects` for `anon`/`authenticated`. None exists anymore → `StorageApiError: Object not found` is thrown and surfaced to the user as the "Object not found" message.
+
+The HEAD also runs whether or not the upload succeeded for that path on a previous attempt, which matches the user's description of pre-upload existence checks failing.
+
+## Changes
+
+### 1. `src/lib/stars.ts` — `uploadAndInsertStar`
+
+- Keep the existing path: `recordings/<star_id>.webm` in bucket `star-audio` (no bucket name inside the object path — already correct).
+- Upload first. If upload fails, throw `new Error("Upload failed, please retry.")` (don't surface raw `StorageApiError`).
+- Remove the `getPublicUrl` + `HEAD` probe entirely.
+- Only after a successful upload, call `supabase.storage.from("star-audio").createSignedUrl(path, 60 * 60 * 24 * 365)` once and store that as `audio_url`. If signing fails, also throw the friendly retry error (and best-effort delete the just-uploaded object so the next attempt is clean).
+- No other behavior changes (placement, color, DB insert stay the same).
+
+### 2. `src/components/Recorder.tsx`
+
+- Preview already uses the local Blob URL via `URL.createObjectURL(blob)` — keep as-is.
+- `submit()` already catches and shows `err.message`; with the friendly error from step 1 the user now sees "Upload failed, please retry." instead of `Object not found`.
+- No structural change needed.
+
+### 3. New migration: re-enable `SELECT` on `storage.objects` for `star-audio/recordings/` only
+
+`createSignedUrl` (client, anon/authenticated key) needs a `SELECT` policy on the object. Scope it tightly so it doesn't reopen the original finding:
+
+```sql
+CREATE POLICY "sign read star-audio recordings"
+ON storage.objects
+FOR SELECT
+TO anon, authenticated
+USING (
+  bucket_id = 'star-audio'
+  AND (storage.foldername(name))[1] = 'recordings'
+);
 ```
 
-Replace with an outline-tracing glow drawn just before the normal polyline + stars:
+`synthesized/` stays unreadable by anon/authenticated, so synth WAVs continue to be served only through the existing server endpoint with short-lived signed URLs. The bucket remains private.
 
-- If `isHovered`:
-  - Pulse stays subtle: `const pulse = 0.5 + 0.5 * Math.sin(p.frameCount * 0.03);`
-  - Draw 2 stroked passes of the same polyline path (re-using `v.starOffsets`) with wide, low-alpha strokes to create a soft outline bloom:
-    - Pass A: `stroke(45, 50, 100, 10 + pulse * 8)`, `strokeWeight(10)`, `p.drawingContext.lineCap = 'round'; lineJoin = 'round'`.
-    - Pass B: `stroke(45, 70, 100, 18 + pulse * 10)`, `strokeWeight(5)`.
-  - Draw a tiny per-star halo (one ellipse per star) at `scale * 0.55` diameter with `fill(45, 70, 100, 14 + pulse * 10)` — small, just enough to bloom the stars themselves.
-  - No centroid ellipse, no `scale * 2.4 / 3.6` circles.
+## Out of scope
 
-Then existing crisp polyline + star rendering runs on top unchanged (still gets the small `hoverBoost` brightness bump). Tone the existing `hoverBoost` down from `15` to `8` so brightness change is barely perceptible — the new outline glow does the heavy lifting.
+- No changes to `synth-audio` endpoint, Max worker, upload-synth route, p5 sketch, recorder UI structure, constellation creation, or any of the constellation column grants.
+- No changes to the `synthesized/` folder policies.
 
-Selected state still skips the glow.
+## Risk
 
-### `src/routes/index.tsx`
-No changes — tooltip stays as-is.
-
-### Out of scope
-Backend, Supabase, Max worker, signed playback, p5 drawing structure for non-hovered constellations, recorder/input mode, click/hover hit-test logic.
+- Long-lived (1y) signed URLs for star recordings persist in the `stars.audio_url` column; same lifetime as before the security migration. If we later want stricter rotation, switch to on-demand signing via a server endpoint — flagged but not done here to keep scope minimal.
