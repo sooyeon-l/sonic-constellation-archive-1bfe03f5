@@ -17,20 +17,41 @@ export type Database = {
       constellations: {
         Row: {
           created_at: string
+          error_message: string | null
           id: string
+          mood_params: Json | null
           question_text: string
+          ready_at: string | null
+          status: string
+          synth_audio_path: string | null
+          synth_audio_url: string | null
+          synthesis_params: Json | null
           title: string
         }
         Insert: {
           created_at?: string
+          error_message?: string | null
           id?: string
+          mood_params?: Json | null
           question_text: string
+          ready_at?: string | null
+          status?: string
+          synth_audio_path?: string | null
+          synth_audio_url?: string | null
+          synthesis_params?: Json | null
           title: string
         }
         Update: {
           created_at?: string
+          error_message?: string | null
           id?: string
+          mood_params?: Json | null
           question_text?: string
+          ready_at?: string | null
+          status?: string
+          synth_audio_path?: string | null
+          synth_audio_url?: string | null
+          synthesis_params?: Json | null
           title?: string
         }
         Relationships: []

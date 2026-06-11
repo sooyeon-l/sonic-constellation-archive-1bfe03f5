@@ -11,6 +11,8 @@ type Phase = "idle" | "recording" | "preview" | "submitting";
 
 interface Props {
   onSubmitted: (star: StarRow) => void;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 function formatTime(s: number) {
@@ -19,7 +21,7 @@ function formatTime(s: number) {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-export function Recorder({ onSubmitted }: Props) {
+export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
   const [supported, setSupported] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -70,6 +72,7 @@ export function Recorder({ onSubmitted }: Props) {
   useEffect(() => () => cleanup(), []);
 
   const startRecording = async () => {
+    if (disabled) return;
     setMessage(null);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
@@ -207,6 +210,8 @@ export function Recorder({ onSubmitted }: Props) {
     );
   }
 
+  const recordLocked = Boolean(disabled) && phase === "idle";
+
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="relative flex h-80 w-80 items-center justify-center">
@@ -221,7 +226,7 @@ export function Recorder({ onSubmitted }: Props) {
             if (phase === "idle") startRecording();
             else if (phase === "recording") stopRecording();
           }}
-          disabled={phase === "submitting"}
+          disabled={phase === "submitting" || recordLocked}
           className="relative z-10 flex h-32 w-32 items-center justify-center rounded-full border border-amber-200/50 bg-zinc-900/80 text-sm font-medium text-amber-100 backdrop-blur transition hover:bg-zinc-800 disabled:opacity-50"
           aria-label={phase === "recording" ? "Stop recording" : "Start recording"}
         >
@@ -232,11 +237,20 @@ export function Recorder({ onSubmitted }: Props) {
             </span>
           ) : phase === "submitting" ? (
             "Uploading…"
+          ) : recordLocked ? (
+            "Session full"
           ) : (
             "Tap to record"
           )}
         </button>
       </div>
+
+      {recordLocked && (
+        <p className="max-w-xs text-center text-xs text-amber-200/85" role="status">
+          {disabledMessage ??
+            "This constellation is full — create it or reset the session to record more."}
+        </p>
+      )}
 
       {phase === "preview" && previewUrl && (
         <div className="flex w-full max-w-md flex-col items-center gap-3">
