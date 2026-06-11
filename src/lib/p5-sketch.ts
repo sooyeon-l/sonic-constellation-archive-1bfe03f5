@@ -344,14 +344,39 @@ export function createSketch(getProps: GetProps) {
         const isHovered = hoveredId === v.id && !isSelected;
         const alphaMul = !selectedId ? 1 : isSelected ? 1 : 0.3;
 
-        // Hover glow — soft, pulsing radial halos behind the cluster.
+        // Hover glow — soft bloom tracing the constellation outline & stars.
         if (isHovered) {
           p.push();
+          p.noFill();
+          const ctx = (p as unknown as { drawingContext: CanvasRenderingContext2D }).drawingContext;
+          const prevCap = ctx.lineCap;
+          const prevJoin = ctx.lineJoin;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          const drawPath = () => {
+            p.beginShape();
+            for (const off of v.starOffsets) {
+              p.vertex(cx + off.dx * scale, cy + off.dy * scale);
+            }
+            if (v.starOffsets.length > 2) {
+              const first = v.starOffsets[0];
+              p.vertex(cx + first.dx * scale, cy + first.dy * scale);
+            }
+            p.endShape();
+          };
+          p.stroke(45, 50, 100, 10 + pulse * 8);
+          p.strokeWeight(10);
+          drawPath();
+          p.stroke(45, 70, 100, 18 + pulse * 10);
+          p.strokeWeight(5);
+          drawPath();
           p.noStroke();
-          p.fill(45, 60, 100, 12 + pulse * 10);
-          p.ellipse(cx, cy, scale * 3.6);
-          p.fill(45, 70, 100, 18 + pulse * 14);
-          p.ellipse(cx, cy, scale * 2.4);
+          p.fill(45, 70, 100, 14 + pulse * 10);
+          for (const off of v.starOffsets) {
+            p.ellipse(cx + off.dx * scale, cy + off.dy * scale, scale * 0.55);
+          }
+          ctx.lineCap = prevCap;
+          ctx.lineJoin = prevJoin;
           p.pop();
         }
 
