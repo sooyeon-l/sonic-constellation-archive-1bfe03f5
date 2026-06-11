@@ -350,7 +350,7 @@ export function createSketch(getProps: GetProps) {
           p.ellipse(x, y, isSelected ? 9 : 5);
         }
       }
-      void dim; // referenced via inline alphaMul above
+      
     }
 
     function hitTestActiveStar(mx: number, my: number): string | null {
