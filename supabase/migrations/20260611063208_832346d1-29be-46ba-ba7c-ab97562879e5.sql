@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "anyone can attach star to constellation" ON public.stars;
