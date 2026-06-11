@@ -54,6 +54,9 @@ function Index() {
   >(null);
   const [liveVolume, setLiveVolume] = useState(0);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<
+    { id: string; x: number; y: number } | null
+  >(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recorderAnchorRef = useRef<HTMLDivElement | null>(null);
   const mic = useMicLevel();
