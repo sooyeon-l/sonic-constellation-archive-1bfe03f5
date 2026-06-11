@@ -321,7 +321,7 @@ export function ContemplationScene({
 
         {expanded && (
           <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-2 p-4">
-            {expanded.status === "ready" && expanded.synth_audio_path && (
+            {expanded.status === "ready" && (
               <button
                 type="button"
                 onClick={() => onPlaySynth(expanded)}

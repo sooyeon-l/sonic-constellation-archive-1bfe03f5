@@ -119,7 +119,7 @@ export function randomPosition() {
 
 
 const CONSTELLATION_COLUMNS =
-  "id, title, question_text, status, synthesis_params, mood_params, synth_audio_url, synth_audio_path, error_message, created_at, ready_at";
+  "id, title, question_text, status, synth_audio_url, error_message, created_at, ready_at";
 
 export async function fetchStars(): Promise<StarRow[]> {
   const { data, error } = await supabase

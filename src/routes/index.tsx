@@ -153,7 +153,7 @@ function Index() {
   );
 
   const playSynth = async (c: ConstellationWithStars) => {
-    if (c.status !== "ready" || !c.synth_audio_path) return;
+    if (c.status !== "ready") return;
     try {
       const res = await fetch(
         `/api/public/constellations/${c.id}/synth-audio`,
@@ -438,8 +438,7 @@ function Index() {
                     Close
                   </button>
                 </div>
-                {selectedConstellation.status === "ready" &&
-                  selectedConstellation.synth_audio_path && (
+                {selectedConstellation.status === "ready" && (
                     <button
                       type="button"
                       onPointerDown={(e) => e.stopPropagation()}
