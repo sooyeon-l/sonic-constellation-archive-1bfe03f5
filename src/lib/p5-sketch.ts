@@ -437,7 +437,9 @@ export function createSketch(getProps: GetProps) {
       }
     };
 
-    p.mousePressed = () => {
+    p.mousePressed = (event?: MouseEvent | PointerEvent) => {
+      const target = (event?.target as HTMLElement | null) ?? null;
+      if (target && target.closest('[data-html-overlay="true"]')) return;
       const props = getProps();
       const mx = p.mouseX;
       const my = p.mouseY;
