@@ -126,6 +126,9 @@ function Index() {
     if (activeStars.length < MIN_CONSTELLATION_STARS || saving) return;
     setSaving(true);
     setSaveError(null);
+    setForming(true);
+    // brief formation animation before backend call
+    await new Promise((r) => setTimeout(r, 800));
     try {
       await createConstellationFromStars(activeStars);
       setActiveStars([]);
@@ -137,9 +140,11 @@ function Index() {
         err instanceof Error ? err.message : "Could not save constellation.",
       );
     } finally {
+      setForming(false);
       setSaving(false);
     }
   };
+
 
   const canCreate = activeStars.length >= MIN_CONSTELLATION_STARS;
   const sessionFull = activeStars.length >= MAX_CONSTELLATION_STARS;
