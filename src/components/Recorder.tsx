@@ -22,7 +22,7 @@ function formatTime(s: number) {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
+export function Recorder({ onSubmitted, disabled, disabledMessage, anchorRef }: Props) {
   const mic = useMicLevel();
   const [supported, setSupported] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
