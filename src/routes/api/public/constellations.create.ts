@@ -22,12 +22,12 @@ export const Route = createFileRoute("/api/public/constellations/create")({
         const ids = Array.isArray(b.star_ids) ? b.star_ids : null;
         if (
           !ids ||
-          ids.length < 3 ||
+          ids.length < 5 ||
           ids.length > 7 ||
           !ids.every((v) => typeof v === "string" && api.isUuid(v))
         ) {
           return api.json(
-            { error: "star_ids must be 3–7 valid UUID strings" },
+            { error: "star_ids must be 5–7 valid UUID strings" },
             400,
           );
         }

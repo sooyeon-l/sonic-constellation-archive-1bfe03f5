@@ -72,7 +72,7 @@ function Index() {
       const el = recorderAnchorRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setAnchor({ x: r.left + r.width / 2, y: r.top + 160 /* button center */ });
+      setAnchor({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -233,9 +233,11 @@ function Index() {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-zinc-950 text-zinc-100">
-      {/* p5 visual layer — the single visual renderer. Sits behind HTML overlays. */}
-      <div className="pointer-events-auto fixed inset-0 z-0">
+    <div className="relative min-h-dvh bg-zinc-950 text-zinc-100">
+      {/* p5 visual layer — wrapper ignores pointer events so HTML buttons
+          always win. The p5 sketch re-enables pointer events on the canvas
+          itself for star/constellation clicks. */}
+      <div className="pointer-events-none fixed inset-0 z-0">
         <P5VisualLayer
           mode={tab}
           isRecording={false}
@@ -252,7 +254,7 @@ function Index() {
       </div>
 
       {/* HTML overlay layer — controls, status, accessibility. */}
-      <div className="pointer-events-none relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-8">
+      <div className="pointer-events-none relative z-10 mx-auto flex min-h-dvh max-w-4xl flex-col gap-6 px-4 pb-12 pt-[max(2.5rem,env(safe-area-inset-top))]">
         <header className="pointer-events-auto text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-amber-200/70">
             Sonic Constellation
@@ -276,63 +278,71 @@ function Index() {
 
           <TabsContent value="input" className="pt-6">
             <div
-              className={`pointer-events-none relative mx-auto h-[60vh] min-h-[420px] w-full transition ${
+              className={`pointer-events-none mx-auto flex w-full flex-col items-center gap-6 transition ${
                 forming
                   ? "ring-2 ring-amber-200/60 shadow-[0_0_60px_rgba(252,211,77,0.35)] rounded-lg"
                   : ""
               }`}
             >
-              <div className="pointer-events-auto absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-                <div ref={recorderAnchorRef}>
-                  <Recorder
-                    onSubmitted={handleSubmitted}
-                    disabled={sessionFull}
-                    disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
-                  />
-                </div>
+              <div className="pointer-events-auto">
+                <Recorder
+                  anchorRef={recorderAnchorRef}
+                  onSubmitted={handleSubmitted}
+                  disabled={sessionFull}
+                  disabledMessage={`You've gathered ${MAX_CONSTELLATION_STARS} stars — create your constellation or reset the session to record more.`}
+                />
               </div>
 
-            </div>
-            <div className="pointer-events-auto mt-4 flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground">
-                {activeStars.length} star
-                {activeStars.length === 1 ? "" : "s"} in this session
-                {!canCreate && activeStars.length > 0
-                  ? ` · ${MIN_CONSTELLATION_STARS - activeStars.length} more to form a constellation`
-                  : ""}
-                {sessionFull ? " · session full (max 7)" : ""}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={createConstellation}
-                  disabled={!canCreate || saving}
-                  className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-                >
-                  {forming
-                    ? "Forming…"
-                    : saving
-                      ? "Saving…"
-                      : "Create Constellation"}
-                </button>
-                {activeStars.length > 0 && (
+              <div className="pointer-events-auto flex flex-col items-center gap-2">
+                <p className="text-xs text-muted-foreground">
+                  {activeStars.length === 0
+                    ? `Create a constellation after ${MIN_CONSTELLATION_STARS} stars`
+                    : (
+                      <>
+                        {activeStars.length} star
+                        {activeStars.length === 1 ? "" : "s"} in this session
+                        {!canCreate
+                          ? ` · ${MIN_CONSTELLATION_STARS - activeStars.length} more to form a constellation`
+                          : ""}
+                        {sessionFull
+                          ? ` · session full (max ${MAX_CONSTELLATION_STARS})`
+                          : ""}
+                      </>
+                    )}
+                </p>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={resetSession}
-                    disabled={saving}
-                    className="rounded-md border border-white/30 px-3 py-2 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                    onClick={createConstellation}
+                    disabled={!canCreate || saving}
+                    className="rounded-md bg-amber-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                   >
-                    Reset session
+                    {forming
+                      ? "Forming…"
+                      : saving
+                        ? "Saving…"
+                        : "Create Constellation"}
                   </button>
+                  {activeStars.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={resetSession}
+                      disabled={saving}
+                      className="rounded-md border border-white/30 px-3 py-2 text-xs text-white/80 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+                    >
+                      Reset session
+                    </button>
+                  )}
+                </div>
+                {saveError && (
+                  <p className="text-xs text-red-300" role="status">
+                    {saveError}
+                  </p>
                 )}
               </div>
-              {saveError && (
-                <p className="text-xs text-red-300" role="status">
-                  {saveError}
-                </p>
-              )}
             </div>
           </TabsContent>
+
 
           <TabsContent value="observe" className="pt-6">
             <div className="pointer-events-auto flex flex-col items-center gap-3 text-center">

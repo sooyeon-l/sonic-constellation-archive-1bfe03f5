@@ -102,10 +102,10 @@ export function createSketch(getProps: GetProps) {
       const seed2 = hash01(c.id + "y");
       const vis: ConstellationVis = {
         id: c.id,
-        cx: (0.12 + seed * 0.76) * p.width,
-        cy: (0.18 + seed2 * 0.64) * p.height,
-        vx: (seed - 0.5) * 0.25,
-        vy: (seed2 - 0.5) * 0.25,
+        cx: (0.25 + seed * 0.50) * p.width,
+        cy: (0.28 + seed2 * 0.44) * p.height,
+        vx: (seed - 0.5) * 0.2,
+        vy: (seed2 - 0.5) * 0.2,
         expansion: 0,
         starOffsets: c.stars.map((s) => ({
           id: s.id,
@@ -189,37 +189,66 @@ export function createSketch(getProps: GetProps) {
       const threshold = 0.001;
       const audioEnergy = Math.max(0, vol - threshold);
       smoothed = smoothed * 0.92 + audioEnergy * 0.08;
-      const wavePower = reduced ? 0 : smoothed * 300;
+      const wavePower = reduced ? 0 : smoothed * 600;
       const baseRadius = Math.min(p.width, p.height) / 6;
       const { cx, cy } = getInputCenter();
       const nz = reduced ? 0 : p.frameCount * 0.008;
 
+      // Three rotated layers, each with its own noise offsets and freq so
+      // they don't trace the same shape — yields the organic look.
+      const layers: Array<{
+        rot: number;
+        ox: number;
+        oy: number;
+        nzMul: number;
+      }> = [
+        { rot: 0, ox: 10, oy: 10, nzMul: 1.0 },
+        { rot: Math.PI, ox: 40, oy: -15, nzMul: 1.3 },
+        { rot: Math.PI * 1.5, ox: -25, oy: 55, nzMul: 0.7 },
+      ];
+
       p.noStroke();
       for (let i = 0; i < circleDiv; i++) {
         const theta = (i * Math.PI * 2) / circleDiv;
-        const n =
-          p.map(
-            p.noise(Math.cos(theta) * 0.8 + 10, Math.sin(theta) * 0.8 + 10, nz),
-            0,
-            1,
-            -1,
-            1,
-          );
-        const wobble = n * wavePower * 5;
-        const radius = baseRadius + wobble;
-
         p.fill(p.map(theta, 0, Math.PI * 2, 170, 250), 25, 100, 75);
 
-        const x1 = cx + radius * Math.cos(theta);
-        const y1 = cy + radius * Math.sin(theta);
-        const x2 = cx + radius * Math.cos(theta + Math.PI);
-        const y2 = cy + radius * Math.sin(theta + Math.PI);
-        const x3 = cx + radius * Math.cos(theta + Math.PI * 1.5);
-        const y3 = cy + radius * Math.sin(theta + Math.PI * 1.5);
-
-        p.ellipse(x1, y1, 1.5);
-        p.ellipse(x2, y2, 1.5);
-        p.ellipse(x3, y3, 1.5);
+        for (const L of layers) {
+          const a = theta + L.rot;
+          const cs = Math.cos(a);
+          const sn = Math.sin(a);
+          // resting deformation — independent of volume so quiet state is
+          // still irregular
+          const rest =
+            (p.noise(cs * 1.6 + L.ox + 30, sn * 1.6 + L.oy + 30, nz * 0.6 * L.nzMul) *
+              2 -
+              1) *
+            baseRadius *
+            0.18;
+          // high-freq audio-driven wobble
+          const hi =
+            p.map(
+              p.noise(cs * 0.8 + L.ox, sn * 0.8 + L.oy, nz * L.nzMul),
+              0,
+              1,
+              -1,
+              1,
+            ) * wavePower * 5;
+          // low-freq harmonic, also audio-driven — deforms overall silhouette
+          const lo =
+            p.map(
+              p.noise(cs * 0.3 + L.ox * 0.5, sn * 0.3 + L.oy * 0.5, nz * 0.4 * L.nzMul),
+              0,
+              1,
+              -1,
+              1,
+            ) *
+            wavePower *
+            2;
+          const radius = baseRadius + rest + hi + lo;
+          const x = cx + radius * cs;
+          const y = cy + radius * sn;
+          p.ellipse(x, y, 1.5);
+        }
       }
     }
 
@@ -229,8 +258,14 @@ export function createSketch(getProps: GetProps) {
       // Saved coords are normalized offsets around 0.5 — render them as
       // offsets from the recorder anchor, scaled by the canvas short edge.
       const scale = Math.min(p.width, p.height);
-      const tX = cx + (a.tx - 0.5) * scale;
-      const tY = cy + (a.ty - 0.5) * scale;
+      let tX = cx + (a.tx - 0.5) * scale;
+      let tY = cy + (a.ty - 0.5) * scale;
+      // Mobile/small-screen safeguard: clamp inside a visible margin so a
+      // loud recording can't push a star off-screen. Preserves the
+      // volume-distance ordering within available room.
+      const margin = Math.min(p.width, p.height) * 0.08;
+      tX = Math.min(p.width - margin, Math.max(margin, tX));
+      tY = Math.min(p.height - margin, Math.max(margin, tY));
       const t = Math.min(1, (now - a.spawnTs) / SPAWN_MS);
       const e = easeOutCubic(t);
       let x = cx + (tX - cx) * e;
@@ -264,8 +299,9 @@ export function createSketch(getProps: GetProps) {
     function getConstellationDrawInfo(v: ConstellationVis) {
       const target = getProps().selectedConstellationId === v.id ? 1 : 0;
       v.expansion += (target - v.expansion) * 0.08;
-      const baseScale = p.height * 0.12;
-      const expandedScale = Math.min(p.width, p.height) * 0.42;
+      const minDim = Math.min(p.width, p.height);
+      const baseScale = minDim * 0.22;
+      const expandedScale = minDim * 0.55;
       const scale = p.lerp(baseScale, expandedScale, v.expansion);
       const tcx = p.width / 2;
       const tcy = p.height / 2;
@@ -278,20 +314,21 @@ export function createSketch(getProps: GetProps) {
       const reduced = getProps().reducedMotion;
       const selectedId = getProps().selectedConstellationId;
       for (const v of constellationMap.values()) {
+        const pad = Math.min(p.width, p.height) * 0.18;
         if (!reduced && selectedId !== v.id) {
           v.cx += v.vx;
           v.cy += v.vy;
-          const pad = 60;
           if (v.cx < pad || v.cx > p.width - pad) v.vx *= -1;
           if (v.cy < pad || v.cy > p.height - pad) v.vy *= -1;
         }
         const { cx, cy, scale } = getConstellationDrawInfo(v);
         const isSelected = selectedId === v.id;
+        const alphaMul = isSelected || !selectedId ? 1 : 0.35;
 
         p.push();
         p.noFill();
-        p.stroke(45, 70, 100, isSelected ? 60 : 28);
-        p.strokeWeight(1);
+        p.stroke(45, 70, 100, (isSelected ? 90 : 55) * alphaMul);
+        p.strokeWeight(isSelected ? 1.8 : 1.2);
         p.beginShape();
         for (const off of v.starOffsets) {
           p.vertex(cx + off.dx * scale, cy + off.dy * scale);
@@ -303,16 +340,17 @@ export function createSketch(getProps: GetProps) {
           const x = cx + off.dx * scale;
           const y = cy + off.dy * scale;
           const halo = p.color(off.color);
-          halo.setAlpha(isSelected ? 60 : 35);
+          halo.setAlpha((isSelected ? 80 : 50) * alphaMul);
           p.noStroke();
           p.fill(halo);
-          p.ellipse(x, y, isSelected ? 26 : 14);
+          p.ellipse(x, y, isSelected ? 32 : 20);
           const core = p.color(off.color);
-          core.setAlpha(240);
+          core.setAlpha(240 * alphaMul);
           p.fill(core);
-          p.ellipse(x, y, isSelected ? 7 : 3.6);
+          p.ellipse(x, y, isSelected ? 9 : 5);
         }
       }
+      
     }
 
     function hitTestActiveStar(mx: number, my: number): string | null {
@@ -339,7 +377,7 @@ export function createSketch(getProps: GetProps) {
       }
       for (const v of constellationMap.values()) {
         const { cx, cy, scale } = getConstellationDrawInfo(v);
-        if (p.dist(mx, my, cx, cy) < Math.max(40, scale * 1.1)) {
+        if (p.dist(mx, my, cx, cy) < Math.max(60, scale * 0.9)) {
           return { starId: null as string | null, constellationId: v.id };
         }
       }
@@ -350,7 +388,12 @@ export function createSketch(getProps: GetProps) {
       const parent = (p as unknown as { _userNode: HTMLElement })._userNode;
       const w = parent?.clientWidth || p.windowWidth;
       const h = parent?.clientHeight || p.windowHeight;
-      p.createCanvas(w, h);
+      const c = p.createCanvas(w, h);
+      // Wrapper is pointer-events: none so HTML overlays always win. The
+      // canvas itself opts back in so p5 can still receive star/cluster
+      // clicks in empty areas.
+      const canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
+      if (canvasEl) canvasEl.style.pointerEvents = "auto";
       p.colorMode(p.HSB, 360, 100, 100, 100);
       rebuildBgStars();
     };

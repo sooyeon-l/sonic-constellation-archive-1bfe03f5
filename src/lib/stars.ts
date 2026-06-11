@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const QUESTION_TEXT =
   "What sound do you wish you could hear one more time?";
 
-export const MIN_CONSTELLATION_STARS = 3;
+export const MIN_CONSTELLATION_STARS = 5;
 export const MAX_CONSTELLATION_STARS = 7;
 
 export const STAR_COLORS = [
@@ -90,7 +90,7 @@ function clamp01(v: number, min: number, max: number) {
 export function radialPositionFromVolume(volumeAverage: number | null) {
   const expectedMax = 0.35;
   const normVol = clamp01((volumeAverage ?? 0) / expectedMax, 0, 1);
-  const radialDistance = 0.12 + normVol * 0.30; // 0.12 .. 0.42 of canvas half-size
+  const radialDistance = 0.22 + normVol * 0.28; // 0.22 .. 0.50 — outside wobble ring
   const angle = Math.random() * Math.PI * 2;
   const x = clamp01(0.5 + Math.cos(angle) * radialDistance, 0.08, 0.92);
   const y = clamp01(0.5 + Math.sin(angle) * radialDistance, 0.08, 0.92);

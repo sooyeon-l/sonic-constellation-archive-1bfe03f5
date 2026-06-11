@@ -13,6 +13,7 @@ interface Props {
   onSubmitted: (star: StarRow) => void;
   disabled?: boolean;
   disabledMessage?: string;
+  anchorRef?: React.Ref<HTMLDivElement>;
 }
 
 function formatTime(s: number) {
@@ -21,7 +22,7 @@ function formatTime(s: number) {
   return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
+export function Recorder({ onSubmitted, disabled, disabledMessage, anchorRef }: Props) {
   const mic = useMicLevel();
   const [supported, setSupported] = useState(true);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -218,7 +219,12 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
       className="relative flex flex-col items-center"
       style={{ width: 320 }}
     >
-      <div className="relative flex h-80 w-80 items-center justify-center">
+      {/* Anchor ref measures ONLY the button frame so the wobble center
+          stays locked to the record button regardless of preview/status. */}
+      <div
+        ref={anchorRef}
+        className="relative flex h-80 w-80 items-center justify-center"
+      >
         <button
           onClick={() => {
             if (phase === "idle") startRecording();
@@ -243,8 +249,19 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
         </button>
       </div>
 
-      {/* Fixed-height status slot so the anchor doesn't shift. */}
-      <div className="flex h-12 w-full items-start justify-center px-2 text-center">
+      {/* In-flow Stop button — pushes layout down, never overlaps siblings. */}
+      {phase === "recording" && (
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="mt-2 rounded-md border border-red-400/60 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 transition hover:bg-red-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+        >
+          Stop
+        </button>
+      )}
+
+      {/* Status slot. */}
+      <div className="mt-2 flex min-h-[2.5rem] w-full items-start justify-center px-2 text-center">
         {recordLocked ? (
           <p className="max-w-xs text-xs text-amber-200/85" role="status">
             {disabledMessage ??
@@ -257,20 +274,10 @@ export function Recorder({ onSubmitted, disabled, disabledMessage }: Props) {
         ) : null}
       </div>
 
-      {/* Stop button absolutely positioned so it doesn't push the main button. */}
-      {phase === "recording" && (
-        <button
-          type="button"
-          onClick={stopRecording}
-          className="absolute left-1/2 top-full -translate-x-1/2 rounded-md border border-red-400/60 bg-red-500/15 px-4 py-2 text-sm font-medium text-red-100 transition hover:bg-red-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
-        >
-          Stop
-        </button>
-      )}
-
-      {/* Preview panel floats below — does not affect anchor centering. */}
+      {/* In-flow preview panel — pushes layout down so Create Constellation
+          and other controls stay clear of it. */}
       {phase === "preview" && previewUrl && (
-        <div className="absolute left-1/2 top-full z-20 mt-2 flex w-[min(28rem,90vw)] -translate-x-1/2 flex-col items-center gap-3 rounded-lg border border-white/10 bg-zinc-950/85 p-3 shadow-2xl backdrop-blur">
+        <div className="mt-3 flex w-[min(28rem,90vw)] flex-col items-center gap-3 rounded-lg border border-white/10 bg-zinc-950/85 p-3 shadow-2xl backdrop-blur">
           <audio src={previewUrl} controls className="w-full" />
           <div className="flex gap-2">
             <button
