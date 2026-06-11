@@ -16,6 +16,17 @@ import {
   type StarRow,
 } from "@/lib/stars";
 
+const KST_FMT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+const formatKST = (iso: string) => `${KST_FMT.format(new Date(iso))} KST`;
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
