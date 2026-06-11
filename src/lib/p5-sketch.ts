@@ -258,8 +258,14 @@ export function createSketch(getProps: GetProps) {
       // Saved coords are normalized offsets around 0.5 — render them as
       // offsets from the recorder anchor, scaled by the canvas short edge.
       const scale = Math.min(p.width, p.height);
-      const tX = cx + (a.tx - 0.5) * scale;
-      const tY = cy + (a.ty - 0.5) * scale;
+      let tX = cx + (a.tx - 0.5) * scale;
+      let tY = cy + (a.ty - 0.5) * scale;
+      // Mobile/small-screen safeguard: clamp inside a visible margin so a
+      // loud recording can't push a star off-screen. Preserves the
+      // volume-distance ordering within available room.
+      const margin = Math.min(p.width, p.height) * 0.08;
+      tX = Math.min(p.width - margin, Math.max(margin, tX));
+      tY = Math.min(p.height - margin, Math.max(margin, tY));
       const t = Math.min(1, (now - a.spawnTs) / SPAWN_MS);
       const e = easeOutCubic(t);
       let x = cx + (tX - cx) * e;
@@ -293,8 +299,9 @@ export function createSketch(getProps: GetProps) {
     function getConstellationDrawInfo(v: ConstellationVis) {
       const target = getProps().selectedConstellationId === v.id ? 1 : 0;
       v.expansion += (target - v.expansion) * 0.08;
-      const baseScale = p.height * 0.12;
-      const expandedScale = Math.min(p.width, p.height) * 0.42;
+      const minDim = Math.min(p.width, p.height);
+      const baseScale = minDim * 0.22;
+      const expandedScale = minDim * 0.55;
       const scale = p.lerp(baseScale, expandedScale, v.expansion);
       const tcx = p.width / 2;
       const tcy = p.height / 2;
@@ -306,21 +313,24 @@ export function createSketch(getProps: GetProps) {
     function drawConstellations() {
       const reduced = getProps().reducedMotion;
       const selectedId = getProps().selectedConstellationId;
+      const dim = (a: number) =>
+        selectedId && selectedId !== "__never__" ? a * 0.35 : a;
       for (const v of constellationMap.values()) {
+        const pad = Math.min(p.width, p.height) * 0.18;
         if (!reduced && selectedId !== v.id) {
           v.cx += v.vx;
           v.cy += v.vy;
-          const pad = 60;
           if (v.cx < pad || v.cx > p.width - pad) v.vx *= -1;
           if (v.cy < pad || v.cy > p.height - pad) v.vy *= -1;
         }
         const { cx, cy, scale } = getConstellationDrawInfo(v);
         const isSelected = selectedId === v.id;
+        const alphaMul = isSelected || !selectedId ? 1 : 0.35;
 
         p.push();
         p.noFill();
-        p.stroke(45, 70, 100, isSelected ? 60 : 28);
-        p.strokeWeight(1);
+        p.stroke(45, 70, 100, (isSelected ? 90 : 55) * alphaMul);
+        p.strokeWeight(isSelected ? 1.8 : 1.2);
         p.beginShape();
         for (const off of v.starOffsets) {
           p.vertex(cx + off.dx * scale, cy + off.dy * scale);
@@ -332,16 +342,17 @@ export function createSketch(getProps: GetProps) {
           const x = cx + off.dx * scale;
           const y = cy + off.dy * scale;
           const halo = p.color(off.color);
-          halo.setAlpha(isSelected ? 60 : 35);
+          halo.setAlpha((isSelected ? 80 : 50) * alphaMul);
           p.noStroke();
           p.fill(halo);
-          p.ellipse(x, y, isSelected ? 26 : 14);
+          p.ellipse(x, y, isSelected ? 32 : 20);
           const core = p.color(off.color);
-          core.setAlpha(240);
+          core.setAlpha(240 * alphaMul);
           p.fill(core);
-          p.ellipse(x, y, isSelected ? 7 : 3.6);
+          p.ellipse(x, y, isSelected ? 9 : 5);
         }
       }
+      void dim; // referenced via inline alphaMul above
     }
 
     function hitTestActiveStar(mx: number, my: number): string | null {
