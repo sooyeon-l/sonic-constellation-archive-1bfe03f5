@@ -283,6 +283,7 @@ export async function uploadAndInsertStar(
     audioUrl = signed.signedUrl;
   }
 
+  console.log("audio meta for placement", meta);
   const pos = radialPositionFromVolume(meta.volumeAverage);
   const row = {
     id,
@@ -299,6 +300,15 @@ export async function uploadAndInsertStar(
     angle: Number(pos.angle.toFixed(4)),
     color: randomColor(),
   };
+  console.log("star placement", {
+    volume: meta.volumeAverage,
+    normVol: pos.normVol,
+    radialDistance: pos.radialDistance,
+    angle: pos.angle,
+    x_position: row.x_position,
+    y_position: row.y_position,
+  });
+
 
 
   const { data, error } = await supabase
