@@ -69,6 +69,8 @@ export function createSketch(getProps: GetProps) {
     const circleDiv = 350;
     const activeStarMap = new Map<string, ActiveStarVis>();
     const constellationMap = new Map<string, ConstellationVis>();
+    let hoveredId: string | null = null;
+    let canvasEl: HTMLCanvasElement | null = null;
 
     function rebuildBgStars() {
       bgStars = [];
