@@ -14,6 +14,12 @@ const { execFile } = require("child_process");
 
 maxApi.post("maxBridge.js starting...");
 
+const PROJECT_DIR = __dirname;
+const OUTPUT_DIR = path.join(PROJECT_DIR, "output");
+const DOWNLOAD_DIR = path.join(PROJECT_DIR, "downloads");
+const DEFAULT_SYNTH_WAV = path.join("output", "test_synth.wav");
+const MIN_WAV_BYTES = 4096;
+
 let config;
 let SITE_URL;
 let SUPABASE_URL;
@@ -46,10 +52,13 @@ try {
     throw new Error("Missing MAX_WORKER_SECRET in config.json");
   }
 
+  ensureDirectory(OUTPUT_DIR);
+  ensureDirectory(DOWNLOAD_DIR);
+
   maxApi.post("maxBridge.js loaded");
   maxApi.post("SITE_URL = " + SITE_URL);
-  maxApi.post("SUPABASE_URL = " + SUPABASE_URL);
   maxApi.post("SUPABASE_BUCKET = " + SUPABASE_BUCKET);
+  maxApi.outlet("record_path", defaultSynthPath());
 } catch (err) {
   maxApi.post("Startup error: " + err.message);
 }
@@ -96,14 +105,40 @@ function workerHeaders() {
   };
 }
 
-function resolveLocalPath(localFilename) {
-  const s = String(localFilename || "C:/max_sonic/test_synth.wav");
+function ensureDirectory(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function resolveLocalPath(localFilename = DEFAULT_SYNTH_WAV) {
+  const s = String(localFilename || DEFAULT_SYNTH_WAV);
 
   if (path.isAbsolute(s)) {
     return s;
   }
 
-  return path.resolve(__dirname, s);
+  return path.resolve(PROJECT_DIR, s);
+}
+
+function downloadPath(filename) {
+  ensureDirectory(DOWNLOAD_DIR);
+  return path.join(DOWNLOAD_DIR, filename);
+}
+
+function defaultSynthPath() {
+  ensureDirectory(OUTPUT_DIR);
+  return resolveLocalPath(DEFAULT_SYNTH_WAV);
+}
+
+function verifyWavFile(wavPath) {
+  const localPath = resolveLocalPath(wavPath);
+  if (!fs.existsSync(localPath)) {
+    return { ok: false, path: localPath, size: 0, error: "missing" };
+  }
+  const size = fs.statSync(localPath).size;
+  if (size < MIN_WAV_BYTES) {
+    return { ok: false, path: localPath, size, error: "too_small" };
+  }
+  return { ok: true, path: localPath, size, error: null };
 }
 
 function convertWebmToWav(webmPath, wavPath) {
@@ -154,10 +189,13 @@ async function uploadSynthesizedWavThroughBackend(constellationId, wavPath) {
     throw new Error("Missing MAX_WORKER_SECRET in config.json");
   }
 
-  const localPath = resolveLocalPath(wavPath);
+  const verified = verifyWavFile(wavPath);
+  const localPath = verified.path;
 
-  if (!fs.existsSync(localPath)) {
-    throw new Error("WAV file does not exist: " + localPath);
+  if (!verified.ok) {
+    throw new Error(
+      "WAV file is not ready for upload (" + verified.error + "): " + localPath
+    );
   }
 
   const audio_base64 = fs.readFileSync(localPath).toString("base64");
@@ -233,8 +271,15 @@ maxApi.addHandler("fetchPending", async () => {
 
     currentConstellation = pending[0];
 
-    maxApi.post("Selected constellation:");
-    maxApi.post(JSON.stringify(currentConstellation, null, 2));
+    maxApi.post(
+      "Selected constellation " +
+        currentConstellation.id +
+        " (" +
+        (currentConstellation.stars?.length || 0) +
+        " star(s), status " +
+        currentConstellation.status +
+        ")"
+    );
 
     maxApi.outlet("constellation_id", currentConstellation.id);
     maxApi.outlet("title", currentConstellation.title || "untitled");
@@ -270,8 +315,82 @@ maxApi.addHandler("fetchPending", async () => {
         );
       }
     }
+
+    maxApi.outlet("pending_loaded");
   } catch (err) {
     maxApi.post("fetchPending error: " + err.message);
+    maxApi.outlet("error", err.message);
+  }
+});
+
+maxApi.addHandler("getDefaultSynthPath", async () => {
+  try {
+    requireStartup();
+    const wavPath = defaultSynthPath();
+    maxApi.outlet("record_path", wavPath);
+    maxApi.post("Default synthesis output path is ready.");
+  } catch (err) {
+    maxApi.post("getDefaultSynthPath error: " + err.message);
+    maxApi.outlet("error", err.message);
+  }
+});
+
+maxApi.addHandler("verifyRecording", async (localWavFilename = DEFAULT_SYNTH_WAV) => {
+  try {
+    requireStartup();
+    const verified = verifyWavFile(localWavFilename);
+    if (!verified.ok) {
+      maxApi.post(
+        "Recording verification failed (" +
+          verified.error +
+          "): " +
+          verified.path
+      );
+      maxApi.outlet("recording_failed", verified.error, verified.path, verified.size);
+      return;
+    }
+    maxApi.post(
+      "Recording verified: " +
+        verified.path +
+        " (" +
+        Math.round(verified.size / 1024) +
+        " KB)"
+    );
+    maxApi.outlet("recording_verified", verified.path, verified.size);
+  } catch (err) {
+    maxApi.post("verifyRecording error: " + err.message);
+    maxApi.outlet("recording_failed", err.message, "null", 0);
+  }
+});
+
+maxApi.addHandler("resolveLocalStar", async (index, localWavFilename) => {
+  try {
+    requireStartup();
+    const i = Number(index);
+    if (!Number.isInteger(i) || i < 0 || i > 6) {
+      throw new Error("resolveLocalStar index must be 0-6");
+    }
+    const localPath = resolveLocalPath(localWavFilename);
+    if (!fs.existsSync(localPath)) {
+      throw new Error("Local star WAV does not exist: " + localPath);
+    }
+    const size = fs.statSync(localPath).size;
+    if (size <= 0) {
+      throw new Error("Local star WAV is empty: " + localPath);
+    }
+    maxApi.post(
+      "Resolved local star " +
+        i +
+        ": " +
+        localPath +
+        " (" +
+        Math.round(size / 1024) +
+        " KB)"
+    );
+    maxApi.outlet("star_file", i, localPath);
+  } catch (err) {
+    maxApi.post("resolveLocalStar error: " + err.message);
+    maxApi.outlet("star_file", Number(index) || 0, "null");
     maxApi.outlet("error", err.message);
   }
 });
@@ -307,7 +426,7 @@ maxApi.addHandler("markSynthesizing", async (constellationId = null) => {
 
 maxApi.addHandler(
   "uploadSynth",
-  async (localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  async (localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       requireStartup();
 
@@ -334,6 +453,13 @@ maxApi.addHandler(
       }
 
       const localPath = resolveLocalPath(localWavFilename);
+      const verified = verifyWavFile(localPath);
+
+      if (!verified.ok) {
+        throw new Error(
+          `Refusing upload: recording verification failed (${verified.error}, ${verified.size} bytes)`
+        );
+      }
 
       maxApi.post("Uploading local WAV through backend:");
       maxApi.post(localPath);
@@ -418,8 +544,8 @@ maxApi.addHandler("downloadStars", async () => {
         continue;
       }
 
-      const webmPath = path.resolve(__dirname, `star_${i}.webm`);
-      const wavPath = path.resolve(__dirname, `star_${i}.wav`);
+      const webmPath = downloadPath(`star_${i}.webm`);
+      const wavPath = downloadPath(`star_${i}.wav`);
 
       try {
         maxApi.post(`  [star ${i}] downloading .webm...`);
@@ -471,7 +597,7 @@ maxApi.addHandler("downloadStars", async () => {
 // Your current Max patch auto-worker probably does NOT use this.
 // It is kept for compatibility, but the patch-based chain is still preferred.
 async function processOnePending(
-  localWavFilename = "C:/max_sonic/test_synth.wav"
+  localWavFilename = DEFAULT_SYNTH_WAV
 ) {
   requireStartup();
 
@@ -555,7 +681,7 @@ async function processOnePending(
 
 maxApi.addHandler(
   "processNext",
-  async (localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  async (localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       await processOnePending(localWavFilename);
     } catch (err) {
@@ -567,7 +693,7 @@ maxApi.addHandler(
 
 maxApi.addHandler(
   "startAuto",
-  (intervalMs = 5000, localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  (intervalMs = 5000, localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       requireStartup();
 

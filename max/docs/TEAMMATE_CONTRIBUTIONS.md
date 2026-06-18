@@ -27,6 +27,12 @@ Files in `max/teammate_sources/` are reference submissions. Preserve them unchan
 - pitch-to-color and volume-to-distance mapping;
 - idea that a star is transformed by joining a constellation.
 
+### Stage 2 adapted modules
+
+- `bp_analysis.maxpat` provides the shared pitch and amplitude analysis so Hyerin's analysis ideas are preserved without duplicating website metadata.
+- `bp_hyerin_mapping.maxpat` maps pitch to hue and amplitude/metadata to intensity and placement-oriented buses.
+- `bp_taewan_visuals.maxpat` consumes those buses for color and visual scale/position.
+
 ### Avoid duplicating
 
 - browser-derived average volume and peak values already available in the website;
@@ -51,6 +57,12 @@ Files in `max/teammate_sources/` are reference submissions. Preserve them unchan
 - pitch-dependent additive/subtractive branch;
 - harmonic layering derived from source pitch;
 - timbral differentiation between low-, middle-, and high-pitched stars.
+
+### Stage 2 adapted modules
+
+- `bp_eunmin_timbre.maxpat` uses shared analysis rather than its own duplicate `fzero~`.
+- It supports the seven shared star slots through `sc_star_mix` and the indexed analysis buses.
+- Its harmonic oscillator branch is gated by real star activity so it cannot free-run during recorder diagnostics or silence.
 
 ### Adapt
 
@@ -77,6 +89,12 @@ Files in `max/teammate_sources/` are reference submissions. Preserve them unchan
 - amplitude-triggered generative response layer;
 - additive voice gestures;
 - rhythmic conversational behavior between submitted recordings and generated tones.
+
+### Stage 2 adapted modules
+
+- `bp_janice_response.maxpat` listens to the real star mix, uses amplitude/onset thresholds, and shapes additive response tones with `line~`.
+- Response pitch is derived from shared analysis ranges rather than arbitrary random pitch selection.
+- The response level is conservative and can be muted through `bp_diagnostics.maxpat`.
 
 ### Adapt
 
@@ -106,6 +124,12 @@ Files in `max/teammate_sources/` are reference submissions. Preserve them unchan
 - polyphonic envelope organization;
 - shared spatial/effects layer;
 - bloom and motion effects where stable.
+
+### Stage 2 adapted modules
+
+- `bp_taewan_visuals.maxpat` maps star x/y metadata, shared pitch, and amplitude/intensity to Jitter position, color, scale, bloom, and motion/glitch behavior.
+- Optional `abl.dsp.phaser~` and `abl.dsp.tides~` processing is represented as an optional branch.
+- `bp_arrangement_mix.maxpat` provides native Max fallback mixing, so missing optional objects must not block required synthesis or recording.
 
 ### Adapt
 

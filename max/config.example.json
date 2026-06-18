@@ -1,0 +1,8 @@
+{
+  "SITE_URL": "https://your-deployed-site.example",
+  "SUPABASE_URL": "https://your-project-ref.supabase.co",
+  "SUPABASE_PROJECT_ID": "your-project-ref",
+  "SUPABASE_PUBLISHABLE_KEY": "your-public-supabase-publishable-key",
+  "SUPABASE_BUCKET": "star-audio",
+  "MAX_WORKER_SECRET": "your-private-max-worker-secret"
+}

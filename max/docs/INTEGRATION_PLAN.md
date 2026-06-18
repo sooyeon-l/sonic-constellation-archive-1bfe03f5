@@ -24,6 +24,15 @@ It must produce a written inventory before changing architecture.
 
 ## Phase 2 — Define stable interfaces
 
+### Stage 1 stabilization baseline
+
+- keep the existing trusted backend final-WAV upload route;
+- use `max/output/test_synth.wav` as the ignored local synthesis output;
+- support star indices `0` through `6` consistently;
+- preserve the backend star order and explicit star IDs;
+- do not add processed-star uploads, database migrations, or Max-to-website analysis round trips in this stage;
+- do not claim the current top-level patch is fully integrated until Max 9 confirms downloaded WAVs load into `s_0` through `s_6`.
+
 ### Star buffer interface
 
 - maximum seven sources;
@@ -124,3 +133,23 @@ Treat this as a separate feature branch or milestone, not as a prerequisite for 
 - one final WAV uploads and changes the constellation to ready;
 - failure states do not corrupt the next queued constellation;
 - the complete flow is tested repeatedly, not only once.
+
+## Stage 2 implementation status
+
+`max/sonic_constellation_main.maxpat` is the current modular integration patch. It loads same-folder runtime bpatchers under `max/` because Max resolved those reliably on the demo laptop. Canonical editable module sources are also kept under `max/modules/`.
+
+Implemented modules:
+
+- `bp_bridge.maxpat`: Node-for-Max backend bridge, without raw signed-URL debug printing.
+- `bp_controller.maxpat`: verified Stage 1 sequencing, `star_meta` metadata bus, recording verification gate.
+- `bp_star_bank.maxpat`: `buffer~ s_0` through `buffer~ s_6`, original recording playback, indexed `sc_star_N` buses.
+- `bp_analysis.maxpat`: shared pitch, pitched-state, peak/normalized amplitude, duration, average amplitude, and x/y metadata buses.
+- `bp_hyerin_mapping.maxpat`: pitch-to-color and amplitude/intensity/metadata mappings.
+- `bp_eunmin_timbre.maxpat`: register/filter/harmonic treatment using shared analysis; harmonic oscillator is activity-gated by real star audio.
+- `bp_janice_response.maxpat`: amplitude/onset-triggered additive response with source-derived pitch relationships.
+- `bp_taewan_visuals.maxpat`: Jitter visuals and optional Ableton branch; failure of this side layer must not block recording.
+- `bp_arrangement_mix.maxpat`: conservative layer mix, level/bypass buses, monitoring, clipping protection.
+- `bp_recorder.maxpat`: `sfrecord~ 2` controlled by the verified open/start/stop/verify sequence.
+- `bp_diagnostics.maxpat`: recorder diagnostic, local star loading/playback, real-flow buttons, layer-level presets.
+
+Current scope remains the first stable target: original star recordings plus one final constellation WAV. No processed-star uploads, database migrations, website re-rendering, or Max-to-website analysis round trips have been added.
