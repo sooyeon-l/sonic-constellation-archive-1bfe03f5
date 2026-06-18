@@ -59,3 +59,7 @@ desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+.lovable
+max\docs
+AGENTS.md
