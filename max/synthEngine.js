@@ -120,8 +120,7 @@ function load_local_star() {
     return;
   }
 
-  outlet(0, "loadstar", index, filePath);
-  starAudioLoaded[index] = true;
+  outlet(1, "resolveLocalStar", index, filePath);
   if (!stars[index]) {
     stars[index] = {
       id: "local-" + index,
@@ -133,7 +132,7 @@ function load_local_star() {
     };
   }
   starCount = Math.max(starCount, index + 1);
-  post("Local star " + index + " sent to buffer loader: " + filePath + "\n");
+  post("Resolving local star " + index + ": " + filePath + "\n");
 }
 
 function playstar(index) {

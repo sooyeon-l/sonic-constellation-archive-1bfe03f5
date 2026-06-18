@@ -361,6 +361,38 @@ maxApi.addHandler("verifyRecording", async (localWavFilename = DEFAULT_SYNTH_WAV
   }
 });
 
+maxApi.addHandler("resolveLocalStar", async (index, localWavFilename) => {
+  try {
+    requireStartup();
+    const i = Number(index);
+    if (!Number.isInteger(i) || i < 0 || i > 6) {
+      throw new Error("resolveLocalStar index must be 0-6");
+    }
+    const localPath = resolveLocalPath(localWavFilename);
+    if (!fs.existsSync(localPath)) {
+      throw new Error("Local star WAV does not exist: " + localPath);
+    }
+    const size = fs.statSync(localPath).size;
+    if (size <= 0) {
+      throw new Error("Local star WAV is empty: " + localPath);
+    }
+    maxApi.post(
+      "Resolved local star " +
+        i +
+        ": " +
+        localPath +
+        " (" +
+        Math.round(size / 1024) +
+        " KB)"
+    );
+    maxApi.outlet("star_file", i, localPath);
+  } catch (err) {
+    maxApi.post("resolveLocalStar error: " + err.message);
+    maxApi.outlet("star_file", Number(index) || 0, "null");
+    maxApi.outlet("error", err.message);
+  }
+});
+
 maxApi.addHandler("markSynthesizing", async (constellationId = null) => {
   try {
     requireStartup();
