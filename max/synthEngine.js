@@ -18,6 +18,8 @@ var MAX_STARS = 7;
 var DEFAULT_SYNTH_WAV = "output/test_synth.wav";
 var currentRecordingPath = DEFAULT_SYNTH_WAV;
 var uploadAfterVerify = false;
+var autoFlow = false;
+var autoFlowStage = "idle";
 var RECORD_OPEN_DELAY_MS = 250;
 var RECORD_START_DELAY_MS = 700;
 var DIAGNOSTIC_MS = 3000;
@@ -66,16 +68,23 @@ function star_count(n) {
 
 function star() {
   var a = arrayfromargs(arguments);
+  var index = stars.length;
+  var x = parseFloat(a[3]) || 0.5;
+  var y = parseFloat(a[4]) || 0.5;
+  var duration = parseFloat(a[5]) || 3.0;
+  var volumePeak = parseFloat(a[6]) || 0.5;
+  var volumeAvg = parseFloat(a[7]) || 0.3;
 
   stars.push({
     id: String(a[0]),
-    x: parseFloat(a[3]) || 0.5,
-    y: parseFloat(a[4]) || 0.5,
-    duration: parseFloat(a[5]) || 3.0,
-    volume_peak: parseFloat(a[6]) || 0.5,
-    volume_avg: parseFloat(a[7]) || 0.3
+    x: x,
+    y: y,
+    duration: duration,
+    volume_peak: volumePeak,
+    volume_avg: volumeAvg
   });
 
+  outlet(0, "star_meta", index, x, y, duration, volumePeak, volumeAvg);
   post("Star " + stars.length + "/" + starCount + "\n");
 }
 
@@ -148,6 +157,22 @@ function playstar(index) {
 
 function stars_downloaded() {
   post("All star audio files downloaded. Click synthesize to run.\n");
+
+  if (autoFlow && autoFlowStage === "downloading") {
+    autoFlowStage = "marking";
+    post("Auto flow: marking constellation synthesizing.\n");
+    outlet(1, "markSynthesizing");
+  }
+}
+
+function pending_loaded() {
+  post("Pending constellation loaded.\n");
+
+  if (autoFlow && autoFlowStage === "fetching") {
+    autoFlowStage = "downloading";
+    post("Auto flow: downloading stars.\n");
+    outlet(1, "downloadStars");
+  }
 }
 
 function synthesis_params(j) {
@@ -159,11 +184,23 @@ function mood_params(j) {
 }
 
 function no_pending() {
+  autoFlow = false;
+  autoFlowStage = "idle";
   post("no_pending\n");
 }
 
 function status() {
-  post("status: " + arrayfromargs(arguments).join(" ") + "\n");
+  var value = arrayfromargs(arguments).join(" ");
+  post("status: " + value + "\n");
+
+  if (autoFlow && autoFlowStage === "marking" && value === "synthesizing") {
+    autoFlowStage = "synthesizing";
+    post("Auto flow: starting synthesis.\n");
+    var t = new Task(function () {
+      synthesize();
+    }, this);
+    t.schedule(250);
+  }
 }
 
 function record_path() {
@@ -186,6 +223,8 @@ function recording_verified() {
 
   if (uploadAfterVerify) {
     uploadAfterVerify = false;
+    autoFlow = false;
+    autoFlowStage = "idle";
     outlet(1, "uploadSynth", verifiedPath);
     post("Upload triggered after recording verification.\n");
   }
@@ -199,6 +238,8 @@ function recording_failed() {
   silenceAudio();
   uploadAfterVerify = false;
   isSynthesizing = false;
+  autoFlow = false;
+  autoFlowStage = "idle";
   post("Recording failed verification (" + reason + "): " + failedPath + "\n");
 
   if (shouldMarkFailed) {
@@ -215,7 +256,7 @@ function synth_audio_path() {
 }
 
 function synth_audio_url() {
-  post("synth_audio_url: " + arrayfromargs(arguments).join(" ") + "\n");
+  post("synth_audio_url received (value hidden)\n");
 }
 
 function error() {
@@ -286,7 +327,22 @@ function clear() {
   isSynthesizing = false;
   starAudioLoaded = {};
   uploadAfterVerify = false;
+  autoFlow = false;
+  autoFlowStage = "idle";
   post("Cleared.\n");
+}
+
+function run_full_flow() {
+  if (isSynthesizing) {
+    post("Already synthesizing. Cannot start run_full_flow.\n");
+    return;
+  }
+
+  clear();
+  autoFlow = true;
+  autoFlowStage = "fetching";
+  post("Auto flow: fetchPending -> downloadStars -> markSynthesizing -> synthesize.\n");
+  outlet(1, "fetchPending");
 }
 
 function start_record() {
@@ -340,8 +396,9 @@ function recorder_diagnostic() {
     outlet(0, "setpan", 0.5);
     outlet(0, "setfilter", 5000);
     outlet(0, "setnoise", 0);
+    outlet(0, "setvoicegain", 0.7);
     outlet(0, "record_start");
-    outlet(0, "setenv", 0.0, 1.0, 0.2, 50.0, 0.0, DIAGNOSTIC_MS - 100.0);
+    outlet(0, "setenv", 0.0, 1.0, 0.75, 50.0, 0.0, DIAGNOSTIC_MS - 100.0);
     post("Recorder diagnostic started: 440 Hz tone for 3 seconds.\n");
   }, this);
   tStart.schedule(RECORD_START_DELAY_MS);
@@ -361,8 +418,10 @@ function recorder_diagnostic() {
 }
 
 function silenceAudio() {
+  outlet(0, "alloff");
   outlet(0, "setenv", 0.0, 50.0);
   outlet(0, "setnoise", 0.0);
+  outlet(0, "setvoicegain", 0.08);
 }
 
 // Main synthesis
@@ -400,6 +459,8 @@ function synthesize() {
       (n - audioCount) +
       " metadata-only).\n"
   );
+
+  outlet(0, "visual_reset", n);
 
   outlet(1, "getDefaultSynthPath");
 
@@ -459,6 +520,8 @@ function scheduleVoice(delayMs, x, y, vp, va, idx) {
   var hasAudio = starAudioLoaded[idx] === true && idx >= 0 && idx < MAX_STARS;
 
   function voiceFn(f, sf, a, p, fc, n, i, ha) {
+    outlet(0, "visual_star", i, p, y, a, f);
+    outlet(0, "visual_star_" + i, p, y, a, f);
     outlet(0, "setfreq", f);
     outlet(0, "setsubfreq", sf);
     outlet(0, "setpan", p);

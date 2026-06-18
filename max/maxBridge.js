@@ -315,6 +315,8 @@ maxApi.addHandler("fetchPending", async () => {
         );
       }
     }
+
+    maxApi.outlet("pending_loaded");
   } catch (err) {
     maxApi.post("fetchPending error: " + err.message);
     maxApi.outlet("error", err.message);
@@ -451,6 +453,13 @@ maxApi.addHandler(
       }
 
       const localPath = resolveLocalPath(localWavFilename);
+      const verified = verifyWavFile(localPath);
+
+      if (!verified.ok) {
+        throw new Error(
+          `Refusing upload: recording verification failed (${verified.error}, ${verified.size} bytes)`
+        );
+      }
 
       maxApi.post("Uploading local WAV through backend:");
       maxApi.post(localPath);
