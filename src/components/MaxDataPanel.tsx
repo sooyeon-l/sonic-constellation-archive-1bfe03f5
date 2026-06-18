@@ -17,7 +17,7 @@ const GET_ENDPOINTS = [
 
 const POST_ENDPOINTS = [
   "/api/public/constellations/:id/mark-synthesizing",
-  "/api/public/constellations/:id/mark-ready",
+  "/api/public/constellations/:id/upload-synth",
   "/api/public/constellations/:id/mark-failed",
 ] as const;
 
@@ -27,12 +27,34 @@ interface ConstellationJson {
   id: string;
   status?: string;
   synth_audio_url?: string | null;
-  stars?: { audio_url?: string }[];
+  synth_audio_path?: string | null;
+  stars?: Array<{
+    audio_url?: string;
+    max_audio_url?: string | null;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
 }
 
 function isSignedUrl(url: string | undefined | null): boolean {
   if (!url) return false;
   return url.includes("?token=") || url.includes("/object/sign/");
+}
+
+function hideSignedUrl(url: string | undefined | null) {
+  return isSignedUrl(url) ? "[signed-url-hidden]" : url;
+}
+
+function sanitizeConstellationPreview(c: ConstellationJson) {
+  return {
+    ...c,
+    synth_audio_url: hideSignedUrl(c.synth_audio_url),
+    stars: c.stars?.map((s) => ({
+      ...s,
+      audio_url: hideSignedUrl(s.audio_url),
+      max_audio_url: hideSignedUrl(s.max_audio_url),
+    })),
+  };
 }
 
 export function MaxDataPanel() {
@@ -83,7 +105,7 @@ export function MaxDataPanel() {
             isSignedUrl((parsed as { audio_url?: string }).audio_url)
           ) {
             nextWarnings.push(
-              "Latest star audio_url is a signed/temporary URL — enable public buckets for stable URLs.",
+              "Latest star audio_url is signed/temporary. Max should download it promptly and transcode it through the Node-for-Max bridge.",
             );
           }
         } catch {
@@ -97,7 +119,11 @@ export function MaxDataPanel() {
     );
     setPendingPreview(
       pending.length > 0
-        ? JSON.stringify(pending[pending.length - 1], null, 2)
+        ? JSON.stringify(
+            sanitizeConstellationPreview(pending[pending.length - 1]),
+            null,
+            2,
+          )
         : null,
     );
 
@@ -106,15 +132,15 @@ export function MaxDataPanel() {
     );
     if (signedStar) {
       nextWarnings.push(
-        "Some star audio_urls are signed/temporary URLs (contain a token). Enable public buckets so Max gets stable URLs.",
+        "Some star audio_urls are signed/temporary. This is expected for the private bucket; Max should fetch and cache them during processing.",
       );
     }
     const readyMissingSynth = allConstellations.filter(
-      (c) => c.status === "ready" && !c.synth_audio_url,
+      (c) => c.status === "ready" && !c.synth_audio_path,
     );
     if (readyMissingSynth.length > 0) {
       nextWarnings.push(
-        `${readyMissingSynth.length} constellation(s) are marked ready but have no synth_audio_url.`,
+        `${readyMissingSynth.length} constellation(s) are marked ready but have no synth_audio_path.`,
       );
     }
 
@@ -203,7 +229,7 @@ export function MaxDataPanel() {
             POST status endpoints require the{" "}
             <code>X-Max-Worker-Secret</code> header (set in Node-for-Max; the
             secret value is never shown here). Invalid transitions return 409
-            JSON: pending_synthesis → synthesizing → ready/failed.
+            JSON: pending_synthesis to synthesizing to ready/failed.
           </p>
         </div>
 
@@ -223,14 +249,19 @@ export function MaxDataPanel() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Max worker loop: poll <code>/constellations/pending</code> → POST{" "}
-          <code>mark-synthesizing</code> → render a WAV locally → upload it to
-          storage at <code>star-audio/synthesized/&#123;id&#125;.wav</code> →
-          POST <code>mark-ready</code> with the public WAV URL. Download/cache
-          star audio locally first, then load into <code>sfplay~</code> or{" "}
-          <code>buffer~</code>/<code>groove~</code>. Prefer{" "}
-          <code>max_audio_url</code> (WAV/AIFF) when present; otherwise{" "}
-          <code>audio_url</code> (webm/opus).
+          Max worker loop: poll <code>/constellations/pending</code>, POST{" "}
+          <code>mark-synthesizing</code>, download/cache star audio, render{" "}
+          <code>max/output/test_synth.wav</code>, then POST that WAV to{" "}
+          <code>/upload-synth</code>. The backend uploads to private storage,
+          records <code>synth_audio_path</code>, and the website later requests
+          a short signed playback URL through <code>/synth-audio</code>.
+        </p>
+        <p className="rounded border border-sky-300/30 bg-sky-300/5 p-2 text-xs text-sky-100/90">
+          Stage 1 note: the Node-for-Max bridge can download and transcode
+          all seven source recordings, but the current Max patch should not be
+          treated as fully verified until downloaded WAV paths are manually
+          confirmed to load into <code>buffer~ s_0</code> through{" "}
+          <code>buffer~ s_6</code> in Max 9.
         </p>
         <div className="rounded border border-amber-300/30 bg-amber-300/5 p-3 text-xs text-amber-100/90">
           <div className="mb-1 font-medium text-amber-200">Max / audio compatibility</div>
@@ -238,7 +269,7 @@ export function MaxDataPanel() {
             <li>
               <code>audio_url</code> is currently <code>audio/webm;codecs=opus</code>.
               Max's <code>sfplay~</code> and <code>buffer~</code> do <em>not</em>
-              decode webm/opus natively — download the file, then transcode to
+              decode webm/opus natively; download the file, then transcode to
               WAV/AIFF (e.g. via <code>ffmpeg -i in.webm out.wav</code>) before
               loading into a buffer.
             </li>

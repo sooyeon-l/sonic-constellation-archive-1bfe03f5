@@ -18,6 +18,19 @@ Website recording
   -> website plays final WAV through Play Synthesized Constellation
 ```
 
+## Stage 1 contract status
+
+The current Stage 1 contract keeps final WAV upload on the trusted backend route:
+
+```text
+Node-for-Max -> /api/public/constellations/:id/upload-synth
+backend -> private Supabase Storage path synthesized/:id.wav
+website -> /api/public/constellations/:id/synth-audio -> short signed URL
+```
+
+Local Max output should use the ignored repository-relative path `max/output/test_synth.wav`.
+The existing top-level patch is not yet the future modular `bpatcher` architecture, and it should not be treated as fully verified until downloaded WAV paths are confirmed in Max 9 to load into `buffer~ s_0` through `buffer~ s_6`.
+
 ## Required audio states
 
 ### 1. Original star recording

@@ -24,6 +24,15 @@ It must produce a written inventory before changing architecture.
 
 ## Phase 2 — Define stable interfaces
 
+### Stage 1 stabilization baseline
+
+- keep the existing trusted backend final-WAV upload route;
+- use `max/output/test_synth.wav` as the ignored local synthesis output;
+- support star indices `0` through `6` consistently;
+- preserve the backend star order and explicit star IDs;
+- do not add processed-star uploads, database migrations, or Max-to-website analysis round trips in this stage;
+- do not claim the current top-level patch is fully integrated until Max 9 confirms downloaded WAVs load into `s_0` through `s_6`.
+
 ### Star buffer interface
 
 - maximum seven sources;

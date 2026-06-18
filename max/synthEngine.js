@@ -14,6 +14,8 @@ var constellationId = null;
 var isSynthesizing = false;
 var starAudioLoaded = {};
 var SYNTH_MS = 10000;
+var MAX_STARS = 7;
+var DEFAULT_SYNTH_WAV = "output/test_synth.wav";
 
 // Bridge message handlers
 
@@ -83,7 +85,7 @@ function star_file() {
     return;
   }
 
-  if (index < 0 || index > 8) {
+  if (index < 0 || index >= MAX_STARS) {
     return;
   }
 
@@ -206,7 +208,7 @@ function clear() {
 }
 
 function start_record() {
-  outlet(0, "record_open", "C:/max_sonic/test_synth.wav");
+  outlet(0, "record_open", DEFAULT_SYNTH_WAV);
 
   var t = new Task(function () {
     outlet(0, "record_start");
@@ -255,7 +257,7 @@ function synthesize() {
       " metadata-only).\n"
   );
 
-  outlet(0, "record_open", "C:/max_sonic/test_synth.wav");
+  outlet(0, "record_open", DEFAULT_SYNTH_WAV);
 
   var tStart = new Task(function () {
     outlet(0, "record_start");
@@ -280,7 +282,7 @@ function synthesize() {
   tStop.schedule(SYNTH_MS + 300);
 
   var tUpload = new Task(function () {
-    outlet(1, "uploadSynth", "C:/max_sonic/test_synth.wav");
+    outlet(1, "uploadSynth", DEFAULT_SYNTH_WAV);
     isSynthesizing = false;
     post("Upload triggered.\n");
   }, this);
@@ -297,7 +299,7 @@ function scheduleVoice(delayMs, x, y, vp, va, idx) {
   var pan = clamp(x, 0.02, 0.98);
   var filt = Math.round(210.0 + y * 2200.0);
   var noise = clamp(vp * 0.28, 0.04, 0.36);
-  var hasAudio = starAudioLoaded[idx] === true && idx >= 0 && idx <= 5;
+  var hasAudio = starAudioLoaded[idx] === true && idx >= 0 && idx < MAX_STARS;
 
   function voiceFn(f, sf, a, p, fc, n, i, ha) {
     outlet(0, "setfreq", f);

@@ -200,7 +200,7 @@
         "box": {
           "id": "obj-5",
           "maxclass": "message",
-          "text": "startAuto 5000 test_synth.wav",
+          "text": "startAuto 5000 output/test_synth.wav",
           "patching_rect": [
             140.0,
             134.0,

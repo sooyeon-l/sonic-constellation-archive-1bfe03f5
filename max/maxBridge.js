@@ -14,6 +14,11 @@ const { execFile } = require("child_process");
 
 maxApi.post("maxBridge.js starting...");
 
+const PROJECT_DIR = __dirname;
+const OUTPUT_DIR = path.join(PROJECT_DIR, "output");
+const DOWNLOAD_DIR = path.join(PROJECT_DIR, "downloads");
+const DEFAULT_SYNTH_WAV = path.join("output", "test_synth.wav");
+
 let config;
 let SITE_URL;
 let SUPABASE_URL;
@@ -46,9 +51,11 @@ try {
     throw new Error("Missing MAX_WORKER_SECRET in config.json");
   }
 
+  ensureDirectory(OUTPUT_DIR);
+  ensureDirectory(DOWNLOAD_DIR);
+
   maxApi.post("maxBridge.js loaded");
   maxApi.post("SITE_URL = " + SITE_URL);
-  maxApi.post("SUPABASE_URL = " + SUPABASE_URL);
   maxApi.post("SUPABASE_BUCKET = " + SUPABASE_BUCKET);
 } catch (err) {
   maxApi.post("Startup error: " + err.message);
@@ -96,14 +103,23 @@ function workerHeaders() {
   };
 }
 
-function resolveLocalPath(localFilename) {
-  const s = String(localFilename || "C:/max_sonic/test_synth.wav");
+function ensureDirectory(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+function resolveLocalPath(localFilename = DEFAULT_SYNTH_WAV) {
+  const s = String(localFilename || DEFAULT_SYNTH_WAV);
 
   if (path.isAbsolute(s)) {
     return s;
   }
 
-  return path.resolve(__dirname, s);
+  return path.resolve(PROJECT_DIR, s);
+}
+
+function downloadPath(filename) {
+  ensureDirectory(DOWNLOAD_DIR);
+  return path.join(DOWNLOAD_DIR, filename);
 }
 
 function convertWebmToWav(webmPath, wavPath) {
@@ -233,8 +249,15 @@ maxApi.addHandler("fetchPending", async () => {
 
     currentConstellation = pending[0];
 
-    maxApi.post("Selected constellation:");
-    maxApi.post(JSON.stringify(currentConstellation, null, 2));
+    maxApi.post(
+      "Selected constellation " +
+        currentConstellation.id +
+        " (" +
+        (currentConstellation.stars?.length || 0) +
+        " star(s), status " +
+        currentConstellation.status +
+        ")"
+    );
 
     maxApi.outlet("constellation_id", currentConstellation.id);
     maxApi.outlet("title", currentConstellation.title || "untitled");
@@ -307,7 +330,7 @@ maxApi.addHandler("markSynthesizing", async (constellationId = null) => {
 
 maxApi.addHandler(
   "uploadSynth",
-  async (localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  async (localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       requireStartup();
 
@@ -418,8 +441,8 @@ maxApi.addHandler("downloadStars", async () => {
         continue;
       }
 
-      const webmPath = path.resolve(__dirname, `star_${i}.webm`);
-      const wavPath = path.resolve(__dirname, `star_${i}.wav`);
+      const webmPath = downloadPath(`star_${i}.webm`);
+      const wavPath = downloadPath(`star_${i}.wav`);
 
       try {
         maxApi.post(`  [star ${i}] downloading .webm...`);
@@ -471,7 +494,7 @@ maxApi.addHandler("downloadStars", async () => {
 // Your current Max patch auto-worker probably does NOT use this.
 // It is kept for compatibility, but the patch-based chain is still preferred.
 async function processOnePending(
-  localWavFilename = "C:/max_sonic/test_synth.wav"
+  localWavFilename = DEFAULT_SYNTH_WAV
 ) {
   requireStartup();
 
@@ -555,7 +578,7 @@ async function processOnePending(
 
 maxApi.addHandler(
   "processNext",
-  async (localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  async (localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       await processOnePending(localWavFilename);
     } catch (err) {
@@ -567,7 +590,7 @@ maxApi.addHandler(
 
 maxApi.addHandler(
   "startAuto",
-  (intervalMs = 5000, localWavFilename = "C:/max_sonic/test_synth.wav") => {
+  (intervalMs = 5000, localWavFilename = DEFAULT_SYNTH_WAV) => {
     try {
       requireStartup();
 
