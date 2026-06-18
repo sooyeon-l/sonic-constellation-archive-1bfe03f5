@@ -10,20 +10,20 @@
     },
     "classnamespace": "box",
     "rect": [
-      74.0,
-      68.0,
-      1450.0,
-      1100.0
+      74,
+      68,
+      1450,
+      1100
     ],
     "bglocked": 0,
     "openinpresentation": 0,
-    "default_fontsize": 12.0,
+    "default_fontsize": 12,
     "default_fontface": 0,
     "default_fontname": "Arial",
     "gridonopen": 1,
     "gridsize": [
-      15.0,
-      15.0
+      15,
+      15
     ],
     "gridsnaponopen": 1,
     "objectsnaponopen": 1,
@@ -35,7 +35,7 @@
     "boxanimatetime": 200,
     "enablehscroll": 1,
     "enablevscroll": 1,
-    "devicewidth": 0.0,
+    "devicewidth": 0,
     "description": "Sonic Constellation synthesis patch",
     "digest": "",
     "tags": "",
@@ -47,12 +47,12 @@
         "box": {
           "id": "obj-1",
           "maxclass": "comment",
-          "text": "SONIC CONSTELLATION  \u2605  constellation_synth.maxpat  |  sfrecord~ control: open <file>  \u2192  int 1 (start)  \u2192  int 0 (stop)  |  run  npm install  in patch folder before first use",
+          "text": "SONIC CONSTELLATION  ★  constellation_synth.maxpat  |  sfrecord~ control: open <file>  →  int 1 (start)  →  int 0 (stop)  |  run  npm install  in patch folder before first use",
           "patching_rect": [
-            10.0,
-            12.0,
-            1200.0,
-            20.0
+            10,
+            12,
+            1200,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -62,12 +62,12 @@
         "box": {
           "id": "obj-2",
           "maxclass": "comment",
-          "text": "1. NODE BRIDGE  |  'not ready'? \u2192 open Terminal, cd to patch folder, npm install, reopen patch",
+          "text": "1. NODE BRIDGE  |  'not ready'? → open Terminal, cd to patch folder, npm install, reopen patch",
           "patching_rect": [
-            10.0,
-            38.0,
-            800.0,
-            20.0
+            10,
+            38,
+            800,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -79,10 +79,10 @@
           "maxclass": "newobj",
           "text": "node.script maxBridge.js",
           "patching_rect": [
-            10.0,
-            62.0,
-            225.0,
-            22.0
+            10,
+            62,
+            225,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -97,10 +97,10 @@
           "maxclass": "newobj",
           "text": "loadbang",
           "patching_rect": [
-            10.0,
-            98.0,
-            70.0,
-            22.0
+            10,
+            98,
+            70,
+            22
           ],
           "numinlets": 0,
           "numoutlets": 1,
@@ -115,10 +115,10 @@
           "maxclass": "newobj",
           "text": "delay 1000",
           "patching_rect": [
-            90.0,
-            98.0,
-            90.0,
-            22.0
+            90,
+            98,
+            90,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -133,10 +133,10 @@
           "maxclass": "message",
           "text": "script start",
           "patching_rect": [
-            192.0,
-            98.0,
-            92.0,
-            22.0
+            192,
+            98,
+            92,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -151,10 +151,10 @@
           "maxclass": "message",
           "text": "script start",
           "patching_rect": [
-            295.0,
-            98.0,
-            92.0,
-            22.0
+            295,
+            98,
+            92,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -167,12 +167,12 @@
         "box": {
           "id": "obj-ssc",
           "maxclass": "comment",
-          "text": "\u2190 click here if 'not ready'",
+          "text": "← click here if 'not ready'",
           "patching_rect": [
-            400.0,
-            102.0,
-            200.0,
-            16.0
+            400,
+            102,
+            200,
+            16
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -184,10 +184,10 @@
           "maxclass": "message",
           "text": "fetchPending",
           "patching_rect": [
-            10.0,
-            134.0,
-            120.0,
-            22.0
+            10,
+            134,
+            120,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -202,10 +202,10 @@
           "maxclass": "message",
           "text": "startAuto 5000 output/test_synth.wav",
           "patching_rect": [
-            140.0,
-            134.0,
-            240.0,
-            22.0
+            140,
+            134,
+            240,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -220,10 +220,10 @@
           "maxclass": "message",
           "text": "stopAuto",
           "patching_rect": [
-            390.0,
-            134.0,
-            80.0,
-            22.0
+            390,
+            134,
+            80,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -238,10 +238,10 @@
           "maxclass": "newobj",
           "text": "print bridge_debug",
           "patching_rect": [
-            10.0,
-            170.0,
-            145.0,
-            22.0
+            10,
+            170,
+            145,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 0,
@@ -254,10 +254,10 @@
           "maxclass": "comment",
           "text": "2. STAR DATA PARSER",
           "patching_rect": [
-            305.0,
-            38.0,
-            200.0,
-            20.0
+            305,
+            38,
+            200,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -269,10 +269,10 @@
           "maxclass": "newobj",
           "text": "js synthEngine.js",
           "patching_rect": [
-            305.0,
-            62.0,
-            185.0,
-            22.0
+            305,
+            62,
+            185,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 2,
@@ -286,12 +286,12 @@
         "box": {
           "id": "obj-10",
           "maxclass": "comment",
-          "text": "MANUAL CONTROLS  (uploadSynth needs fetchPending first \u2014 expected when testing locally)",
+          "text": "MANUAL CONTROLS  (uploadSynth needs fetchPending first — expected when testing locally)",
           "patching_rect": [
-            550.0,
-            38.0,
-            480.0,
-            20.0
+            550,
+            38,
+            480,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -303,10 +303,10 @@
           "maxclass": "message",
           "text": "test_metadata",
           "patching_rect": [
-            550.0,
-            62.0,
-            120.0,
-            22.0
+            550,
+            62,
+            120,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -321,10 +321,10 @@
           "maxclass": "message",
           "text": "synthesize",
           "patching_rect": [
-            680.0,
-            62.0,
-            92.0,
-            22.0
+            680,
+            62,
+            92,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -339,10 +339,10 @@
           "maxclass": "message",
           "text": "start_record",
           "patching_rect": [
-            550.0,
-            92.0,
-            108.0,
-            22.0
+            550,
+            92,
+            108,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -357,10 +357,10 @@
           "maxclass": "message",
           "text": "stop_record",
           "patching_rect": [
-            668.0,
-            92.0,
-            100.0,
-            22.0
+            668,
+            92,
+            100,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -375,10 +375,10 @@
           "maxclass": "message",
           "text": "clear",
           "patching_rect": [
-            550.0,
-            122.0,
-            55.0,
-            22.0
+            550,
+            122,
+            55,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -393,10 +393,10 @@
           "maxclass": "message",
           "text": "recorder_diagnostic",
           "patching_rect": [
-            615.0,
-            122.0,
-            155.0,
-            22.0
+            615,
+            122,
+            155,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -411,10 +411,10 @@
           "maxclass": "comment",
           "text": "3/4.  SYNTH COMMAND ROUTER  |  sfrecord~ int message: 1 = start recording,  0 = stop recording  (from Max 9 help file)",
           "patching_rect": [
-            810.0,
-            38.0,
-            640.0,
-            20.0
+            810,
+            38,
+            640,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -424,16 +424,18 @@
         "box": {
           "id": "obj-17",
           "maxclass": "newobj",
-          "text": "route setfreq setsubfreq setpan setfilter setnoise setenv record_open record_start record_stop dsp_start",
+          "text": "route setfreq setsubfreq setpan setfilter setnoise setenv record_open record_start record_stop dsp_start loadstar playstar",
           "patching_rect": [
-            810.0,
-            62.0,
-            600.0,
-            22.0
+            810,
+            62,
+            600,
+            22
           ],
           "numinlets": 2,
-          "numoutlets": 11,
+          "numoutlets": 13,
           "outlettype": [
+            "",
+            "",
             "",
             "",
             "",
@@ -454,10 +456,10 @@
           "maxclass": "newobj",
           "text": "prepend open",
           "patching_rect": [
-            810.0,
-            98.0,
-            95.0,
-            22.0
+            810,
+            98,
+            95,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -472,10 +474,10 @@
           "maxclass": "message",
           "text": "1",
           "patching_rect": [
-            916.0,
-            98.0,
-            30.0,
-            22.0
+            916,
+            98,
+            30,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -490,10 +492,10 @@
           "maxclass": "comment",
           "text": "int 1 = start",
           "patching_rect": [
-            956.0,
-            102.0,
-            100.0,
-            16.0
+            956,
+            102,
+            100,
+            16
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -505,10 +507,10 @@
           "maxclass": "message",
           "text": "0",
           "patching_rect": [
-            810.0,
-            134.0,
-            30.0,
-            22.0
+            810,
+            134,
+            30,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -523,10 +525,10 @@
           "maxclass": "comment",
           "text": "int 0 = stop",
           "patching_rect": [
-            945.0,
-            138.0,
-            100.0,
-            16.0
+            945,
+            138,
+            100,
+            16
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -538,10 +540,10 @@
           "maxclass": "message",
           "text": "; dsp start",
           "patching_rect": [
-            850.0,
-            134.0,
-            85.0,
-            22.0
+            850,
+            134,
+            85,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -554,12 +556,12 @@
         "box": {
           "id": "obj-21",
           "maxclass": "comment",
-          "text": "5.  SYNTHESIS LAYERS  \u2014  main osc \u00b7 sub octave \u00b7 filtered noise",
+          "text": "5.  SYNTHESIS LAYERS  —  main osc · sub octave · filtered noise",
           "patching_rect": [
-            10.0,
-            208.0,
-            500.0,
-            20.0
+            10,
+            208,
+            500,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -571,10 +573,10 @@
           "maxclass": "newobj",
           "text": "cycle~ 440",
           "patching_rect": [
-            10.0,
-            232.0,
-            80.0,
-            22.0
+            10,
+            232,
+            80,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -589,10 +591,10 @@
           "maxclass": "newobj",
           "text": "cycle~ 220",
           "patching_rect": [
-            100.0,
-            232.0,
-            80.0,
-            22.0
+            100,
+            232,
+            80,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -607,10 +609,10 @@
           "maxclass": "newobj",
           "text": "noise~",
           "patching_rect": [
-            220.0,
-            232.0,
-            60.0,
-            22.0
+            220,
+            232,
+            60,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -625,10 +627,10 @@
           "maxclass": "newobj",
           "text": "lores~ 500 0.1",
           "patching_rect": [
-            285.0,
-            232.0,
-            115.0,
-            22.0
+            285,
+            232,
+            115,
+            22
           ],
           "numinlets": 3,
           "numoutlets": 1,
@@ -643,10 +645,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.6",
           "patching_rect": [
-            10.0,
-            272.0,
-            60.0,
-            22.0
+            10,
+            272,
+            60,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -661,10 +663,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.2",
           "patching_rect": [
-            100.0,
-            272.0,
-            60.0,
-            22.0
+            100,
+            272,
+            60,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -679,10 +681,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.15",
           "patching_rect": [
-            285.0,
-            272.0,
-            70.0,
-            22.0
+            285,
+            272,
+            70,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -697,10 +699,10 @@
           "maxclass": "newobj",
           "text": "+~",
           "patching_rect": [
-            55.0,
-            312.0,
-            40.0,
-            22.0
+            55,
+            312,
+            40,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -715,10 +717,10 @@
           "maxclass": "newobj",
           "text": "+~",
           "patching_rect": [
-            55.0,
-            352.0,
-            40.0,
-            22.0
+            55,
+            352,
+            40,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -733,10 +735,10 @@
           "maxclass": "comment",
           "text": "Amplitude Envelope",
           "patching_rect": [
-            155.0,
-            310.0,
-            165.0,
-            20.0
+            155,
+            310,
+            165,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -748,10 +750,10 @@
           "maxclass": "newobj",
           "text": "line~ 0.",
           "patching_rect": [
-            155.0,
-            332.0,
-            75.0,
-            22.0
+            155,
+            332,
+            75,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -766,10 +768,10 @@
           "maxclass": "newobj",
           "text": "*~",
           "patching_rect": [
-            55.0,
-            392.0,
-            40.0,
-            22.0
+            55,
+            392,
+            40,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -782,12 +784,12 @@
         "box": {
           "id": "obj-34",
           "maxclass": "comment",
-          "text": "6.  FX / SPACE  \u2014  delay",
+          "text": "6.  FX / SPACE  —  delay",
           "patching_rect": [
-            10.0,
-            422.0,
-            220.0,
-            20.0
+            10,
+            422,
+            220,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -799,10 +801,10 @@
           "maxclass": "newobj",
           "text": "tapin~ 2000",
           "patching_rect": [
-            55.0,
-            445.0,
-            95.0,
-            22.0
+            55,
+            445,
+            95,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -817,10 +819,10 @@
           "maxclass": "newobj",
           "text": "tapout~ 400",
           "patching_rect": [
-            55.0,
-            482.0,
-            95.0,
-            22.0
+            55,
+            482,
+            95,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -835,10 +837,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.25",
           "patching_rect": [
-            165.0,
-            482.0,
-            72.0,
-            22.0
+            165,
+            482,
+            72,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -853,10 +855,10 @@
           "maxclass": "newobj",
           "text": "+~",
           "patching_rect": [
-            55.0,
-            522.0,
-            40.0,
-            22.0
+            55,
+            522,
+            40,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -871,10 +873,10 @@
           "maxclass": "comment",
           "text": "Pan  L=(1-x)  R=x",
           "patching_rect": [
-            10.0,
-            558.0,
-            180.0,
-            20.0
+            10,
+            558,
+            180,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -886,10 +888,10 @@
           "maxclass": "newobj",
           "text": "!- 1.",
           "patching_rect": [
-            55.0,
-            578.0,
-            55.0,
-            22.0
+            55,
+            578,
+            55,
+            22
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -904,10 +906,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.5",
           "patching_rect": [
-            55.0,
-            605.0,
-            60.0,
-            22.0
+            55,
+            605,
+            60,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -922,10 +924,10 @@
           "maxclass": "newobj",
           "text": "*~ 0.5",
           "patching_rect": [
-            130.0,
-            605.0,
-            60.0,
-            22.0
+            130,
+            605,
+            60,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -938,12 +940,12 @@
         "box": {
           "id": "obj-43",
           "maxclass": "comment",
-          "text": "7.  RECORDER  \u2014  open <file>  then  int 1 (start)  /  int 0 (stop)",
+          "text": "7.  RECORDER  —  open <file>  then  int 1 (start)  /  int 0 (stop)",
           "patching_rect": [
-            10.0,
-            642.0,
-            420.0,
-            20.0
+            10,
+            642,
+            420,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -955,10 +957,10 @@
           "maxclass": "newobj",
           "text": "sfrecord~ 2",
           "patching_rect": [
-            10.0,
-            665.0,
-            105.0,
-            22.0
+            10,
+            665,
+            105,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 1,
@@ -973,10 +975,10 @@
           "maxclass": "newobj",
           "text": "dac~ 1 2",
           "patching_rect": [
-            158.0,
-            665.0,
-            72.0,
-            22.0
+            158,
+            665,
+            72,
+            22
           ],
           "numinlets": 2,
           "numoutlets": 0,
@@ -987,12 +989,12 @@
         "box": {
           "id": "obj-46",
           "maxclass": "comment",
-          "text": "8.  UPLOAD  \u2014  js outlet 1 \u2192 node.script \u2192 uploadSynth \u2192 Supabase \u2192 website  (requires fetchPending first to set currentConstellation)",
+          "text": "8.  UPLOAD  —  js outlet 1 → node.script → uploadSynth → Supabase → website  (requires fetchPending first to set currentConstellation)",
           "patching_rect": [
-            10.0,
-            700.0,
-            780.0,
-            20.0
+            10,
+            700,
+            780,
+            20
           ],
           "numinlets": 1,
           "numoutlets": 0
@@ -1003,10 +1005,10 @@
           "id": "manual-downloadStars",
           "maxclass": "message",
           "patching_rect": [
-            10.0,
-            168.0,
-            110.0,
-            22.0
+            10,
+            168,
+            110,
+            22
           ],
           "text": "downloadStars",
           "numinlets": 2,
@@ -1021,10 +1023,10 @@
           "id": "manual-markSynth",
           "maxclass": "message",
           "patching_rect": [
-            130.0,
-            168.0,
-            120.0,
-            22.0
+            130,
+            168,
+            120,
+            22
           ],
           "text": "markSynthesizing",
           "numinlets": 2,
@@ -1039,12 +1041,12 @@
           "id": "manual-c",
           "maxclass": "comment",
           "patching_rect": [
-            265.0,
-            172.0,
-            520.0,
-            20.0
+            265,
+            172,
+            520,
+            20
           ],
-          "text": "Manual fallback: fetchPending \u2192 downloadStars \u2192 markSynthesizing \u2192 synthesize"
+          "text": "Manual fallback: fetchPending → downloadStars → markSynthesizing → synthesize"
         }
       },
       {
@@ -1052,12 +1054,12 @@
           "id": "auto-c0",
           "maxclass": "comment",
           "patching_rect": [
-            10.0,
-            300.0,
-            820.0,
-            20.0
+            10,
+            300,
+            820,
+            20
           ],
-          "text": "AUTO WORKER \u2014 full website pipeline: fetch \u2192 downloadStars \u2192 markSynthesizing \u2192 synthesize \u2192 uploadSynth \u2192 ready"
+          "text": "AUTO WORKER — full website pipeline: fetch → downloadStars → markSynthesizing → synthesize → uploadSynth → ready"
         }
       },
       {
@@ -1065,10 +1067,10 @@
           "id": "auto-toggle",
           "maxclass": "toggle",
           "patching_rect": [
-            10.0,
-            330.0,
-            24.0,
-            24.0
+            10,
+            330,
+            24,
+            24
           ],
           "numinlets": 1,
           "numoutlets": 1,
@@ -1082,10 +1084,10 @@
           "id": "auto-metro",
           "maxclass": "newobj",
           "patching_rect": [
-            50.0,
-            330.0,
-            80.0,
-            22.0
+            50,
+            330,
+            80,
+            22
           ],
           "text": "metro 5000",
           "numinlets": 1,
@@ -1100,10 +1102,10 @@
           "id": "auto-onebang",
           "maxclass": "newobj",
           "patching_rect": [
-            145.0,
-            330.0,
-            70.0,
-            22.0
+            145,
+            330,
+            70,
+            22
           ],
           "text": "onebang",
           "numinlets": 2,
@@ -1118,10 +1120,10 @@
           "id": "auto-fetch",
           "maxclass": "message",
           "patching_rect": [
-            230.0,
-            330.0,
-            95.0,
-            22.0
+            230,
+            330,
+            95,
+            22
           ],
           "text": "fetchPending",
           "numinlets": 2,
@@ -1136,10 +1138,10 @@
           "id": "auto-c1",
           "maxclass": "comment",
           "patching_rect": [
-            340.0,
-            333.0,
-            640.0,
-            20.0
+            340,
+            333,
+            640,
+            20
           ],
           "text": "Turn on. onebang prevents repeated fetches while one constellation is being processed."
         }
@@ -1149,10 +1151,10 @@
           "id": "auto-route",
           "maxclass": "newobj",
           "patching_rect": [
-            10.0,
-            380.0,
-            345.0,
-            22.0
+            10,
+            380,
+            345,
+            22
           ],
           "text": "route status stars_downloaded ready error no_pending",
           "numinlets": 1,
@@ -1172,10 +1174,10 @@
           "id": "auto-status",
           "maxclass": "newobj",
           "patching_rect": [
-            10.0,
-            420.0,
-            300.0,
-            22.0
+            10,
+            420,
+            300,
+            22
           ],
           "text": "route pending_synthesis synthesizing ready failed",
           "numinlets": 1,
@@ -1194,10 +1196,10 @@
           "id": "auto-dl-delay",
           "maxclass": "newobj",
           "patching_rect": [
-            10.0,
-            465.0,
-            70.0,
-            22.0
+            10,
+            465,
+            70,
+            22
           ],
           "text": "delay 500",
           "numinlets": 1,
@@ -1212,10 +1214,10 @@
           "id": "auto-dl",
           "maxclass": "message",
           "patching_rect": [
-            95.0,
-            465.0,
-            105.0,
-            22.0
+            95,
+            465,
+            105,
+            22
           ],
           "text": "downloadStars",
           "numinlets": 2,
@@ -1230,10 +1232,10 @@
           "id": "auto-ms-delay",
           "maxclass": "newobj",
           "patching_rect": [
-            220.0,
-            465.0,
-            70.0,
-            22.0
+            220,
+            465,
+            70,
+            22
           ],
           "text": "delay 500",
           "numinlets": 1,
@@ -1248,10 +1250,10 @@
           "id": "auto-ms",
           "maxclass": "message",
           "patching_rect": [
-            305.0,
-            465.0,
-            115.0,
-            22.0
+            305,
+            465,
+            115,
+            22
           ],
           "text": "markSynthesizing",
           "numinlets": 2,
@@ -1266,10 +1268,10 @@
           "id": "auto-syn-delay",
           "maxclass": "newobj",
           "patching_rect": [
-            440.0,
-            465.0,
-            70.0,
-            22.0
+            440,
+            465,
+            70,
+            22
           ],
           "text": "delay 500",
           "numinlets": 1,
@@ -1284,10 +1286,10 @@
           "id": "auto-syn",
           "maxclass": "message",
           "patching_rect": [
-            525.0,
-            465.0,
-            75.0,
-            22.0
+            525,
+            465,
+            75,
+            22
           ],
           "text": "synthesize",
           "numinlets": 2,
@@ -1302,12 +1304,988 @@
           "id": "auto-c2",
           "maxclass": "comment",
           "patching_rect": [
-            10.0,
-            505.0,
-            900.0,
-            20.0
+            10,
+            505,
+            900,
+            20
           ],
-          "text": "pending_synthesis \u2192 downloadStars | stars_downloaded \u2192 markSynthesizing | synthesizing \u2192 synthesize | ready/error/no_pending \u2192 re-arm"
+          "text": "pending_synthesis → downloadStars | stars_downloaded → markSynthesizing | synthesizing → synthesize | ready/error/no_pending → re-arm"
+        }
+      },
+      {
+        "box": {
+          "id": "star-bank-comment",
+          "maxclass": "comment",
+          "patching_rect": [
+            810,
+            180,
+            760,
+            20
+          ],
+          "text": "CURRENT PATCH STAR BUFFER BANK  |  loadstar <index> <path> -> buffer~ s_0..s_6  |  playstar <index> -> play~",
+          "numinlets": 1,
+          "numoutlets": 0
+        }
+      },
+      {
+        "box": {
+          "id": "route-loadstar",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            208,
+            220,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 8,
+          "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "text": "route 0 1 2 3 4 5 6"
+        }
+      },
+      {
+        "box": {
+          "id": "route-playstar",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1060,
+            208,
+            220,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 8,
+          "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "text": "route 0 1 2 3 4 5 6"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-star-comment",
+          "maxclass": "comment",
+          "patching_rect": [
+            810,
+            505,
+            780,
+            20
+          ],
+          "text": "Manual star tests: load downloaded WAVs, play a single buffer, then use start_record/stop_record to record real star audio.",
+          "numinlets": 1,
+          "numoutlets": 0
+        }
+      },
+      {
+        "box": {
+          "id": "star0-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            240,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star0-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            240,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_0"
+        }
+      },
+      {
+        "box": {
+          "id": "star0-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            240,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star0-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            240,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_0"
+        }
+      },
+      {
+        "box": {
+          "id": "star0-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            240,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star0",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            532,
+            245,
+            22
+          ],
+          "text": "load_local_star 0 downloads/star_0.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star0",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            532,
+            82,
+            22
+          ],
+          "text": "playstar 0",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star1-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            274,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star1-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            274,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_1"
+        }
+      },
+      {
+        "box": {
+          "id": "star1-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            274,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star1-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            274,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_1"
+        }
+      },
+      {
+        "box": {
+          "id": "star1-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            274,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star1",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            558,
+            245,
+            22
+          ],
+          "text": "load_local_star 1 downloads/star_1.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star1",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            558,
+            82,
+            22
+          ],
+          "text": "playstar 1",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star2-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            308,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star2-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            308,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_2"
+        }
+      },
+      {
+        "box": {
+          "id": "star2-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            308,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star2-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            308,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_2"
+        }
+      },
+      {
+        "box": {
+          "id": "star2-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            308,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star2",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            584,
+            245,
+            22
+          ],
+          "text": "load_local_star 2 downloads/star_2.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star2",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            584,
+            82,
+            22
+          ],
+          "text": "playstar 2",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star3-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            342,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star3-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            342,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_3"
+        }
+      },
+      {
+        "box": {
+          "id": "star3-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            342,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star3-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            342,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_3"
+        }
+      },
+      {
+        "box": {
+          "id": "star3-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            342,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star3",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            610,
+            245,
+            22
+          ],
+          "text": "load_local_star 3 downloads/star_3.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star3",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            610,
+            82,
+            22
+          ],
+          "text": "playstar 3",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star4-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            376,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star4-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            376,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_4"
+        }
+      },
+      {
+        "box": {
+          "id": "star4-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            376,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star4-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            376,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_4"
+        }
+      },
+      {
+        "box": {
+          "id": "star4-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            376,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star4",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            636,
+            245,
+            22
+          ],
+          "text": "load_local_star 4 downloads/star_4.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star4",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            636,
+            82,
+            22
+          ],
+          "text": "playstar 4",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star5-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            410,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star5-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            410,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_5"
+        }
+      },
+      {
+        "box": {
+          "id": "star5-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            410,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star5-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            410,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_5"
+        }
+      },
+      {
+        "box": {
+          "id": "star5-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            410,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star5",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            662,
+            245,
+            22
+          ],
+          "text": "load_local_star 5 downloads/star_5.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star5",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            662,
+            82,
+            22
+          ],
+          "text": "playstar 5",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star6-replace",
+          "maxclass": "newobj",
+          "patching_rect": [
+            810,
+            444,
+            110,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "text": "prepend replace"
+        }
+      },
+      {
+        "box": {
+          "id": "star6-buffer",
+          "maxclass": "newobj",
+          "patching_rect": [
+            930,
+            444,
+            100,
+            22
+          ],
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "float",
+            "bang"
+          ],
+          "text": "buffer~ s_6"
+        }
+      },
+      {
+        "box": {
+          "id": "star6-start",
+          "maxclass": "message",
+          "patching_rect": [
+            1060,
+            444,
+            52,
+            22
+          ],
+          "text": "start",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "star6-play",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1122,
+            444,
+            80,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 2,
+          "outlettype": [
+            "signal",
+            "bang"
+          ],
+          "text": "play~ s_6"
+        }
+      },
+      {
+        "box": {
+          "id": "star6-gain",
+          "maxclass": "newobj",
+          "patching_rect": [
+            1212,
+            444,
+            70,
+            22
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            "signal"
+          ],
+          "text": "*~ 0.18"
+        }
+      },
+      {
+        "box": {
+          "id": "manual-load-star6",
+          "maxclass": "message",
+          "patching_rect": [
+            810,
+            688,
+            245,
+            22
+          ],
+          "text": "load_local_star 6 downloads/star_6.wav",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "manual-play-star6",
+          "maxclass": "message",
+          "patching_rect": [
+            1068,
+            688,
+            82,
+            22
+          ],
+          "text": "playstar 6",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
         }
       }
     ],
@@ -2209,6 +3187,702 @@
           "destination": [
             "auto-onebang",
             1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            0
+          ],
+          "destination": [
+            "star0-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star0-replace",
+            0
+          ],
+          "destination": [
+            "star0-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            0
+          ],
+          "destination": [
+            "star0-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star0-start",
+            0
+          ],
+          "destination": [
+            "star0-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star0-play",
+            0
+          ],
+          "destination": [
+            "star0-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star0-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star0",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star0",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            1
+          ],
+          "destination": [
+            "star1-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star1-replace",
+            0
+          ],
+          "destination": [
+            "star1-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            1
+          ],
+          "destination": [
+            "star1-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star1-start",
+            0
+          ],
+          "destination": [
+            "star1-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star1-play",
+            0
+          ],
+          "destination": [
+            "star1-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star1-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star1",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star1",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            2
+          ],
+          "destination": [
+            "star2-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star2-replace",
+            0
+          ],
+          "destination": [
+            "star2-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            2
+          ],
+          "destination": [
+            "star2-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star2-start",
+            0
+          ],
+          "destination": [
+            "star2-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star2-play",
+            0
+          ],
+          "destination": [
+            "star2-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star2-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star2",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star2",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            3
+          ],
+          "destination": [
+            "star3-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star3-replace",
+            0
+          ],
+          "destination": [
+            "star3-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            3
+          ],
+          "destination": [
+            "star3-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star3-start",
+            0
+          ],
+          "destination": [
+            "star3-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star3-play",
+            0
+          ],
+          "destination": [
+            "star3-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star3-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star3",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star3",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            4
+          ],
+          "destination": [
+            "star4-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star4-replace",
+            0
+          ],
+          "destination": [
+            "star4-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            4
+          ],
+          "destination": [
+            "star4-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star4-start",
+            0
+          ],
+          "destination": [
+            "star4-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star4-play",
+            0
+          ],
+          "destination": [
+            "star4-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star4-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star4",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star4",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            5
+          ],
+          "destination": [
+            "star5-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star5-replace",
+            0
+          ],
+          "destination": [
+            "star5-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            5
+          ],
+          "destination": [
+            "star5-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star5-start",
+            0
+          ],
+          "destination": [
+            "star5-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star5-play",
+            0
+          ],
+          "destination": [
+            "star5-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star5-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star5",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star5",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-loadstar",
+            6
+          ],
+          "destination": [
+            "star6-replace",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star6-replace",
+            0
+          ],
+          "destination": [
+            "star6-buffer",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "route-playstar",
+            6
+          ],
+          "destination": [
+            "star6-start",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star6-start",
+            0
+          ],
+          "destination": [
+            "star6-play",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star6-play",
+            0
+          ],
+          "destination": [
+            "star6-gain",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "star6-gain",
+            0
+          ],
+          "destination": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-load-star6",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "manual-play-star6",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-17",
+            10
+          ],
+          "destination": [
+            "route-loadstar",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-17",
+            11
+          ],
+          "destination": [
+            "route-playstar",
+            0
           ]
         }
       }

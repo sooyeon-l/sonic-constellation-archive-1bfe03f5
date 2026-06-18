@@ -82,7 +82,7 @@ function star() {
 function star_file() {
   var args = arrayfromargs(arguments);
   var index = parseInt(args[0], 10);
-  var filePath = String(args[1]);
+  var filePath = args.slice(1).join(" ");
 
   if (filePath === "null" || filePath === "") {
     post("Star " + index + ": no audio file - will use metadata synthesis\n");
@@ -108,6 +108,43 @@ function star_file() {
       filePath +
       "\n"
   );
+}
+
+function load_local_star() {
+  var args = arrayfromargs(arguments);
+  var index = parseInt(args[0], 10);
+  var filePath = args.slice(1).join(" ");
+
+  if (index < 0 || index >= MAX_STARS || !filePath) {
+    post("load_local_star requires index 0-6 and a file path.\n");
+    return;
+  }
+
+  outlet(0, "loadstar", index, filePath);
+  starAudioLoaded[index] = true;
+  if (!stars[index]) {
+    stars[index] = {
+      id: "local-" + index,
+      x: 0.5,
+      y: 0.5,
+      duration: 3.0,
+      volume_peak: 0.6,
+      volume_avg: 0.35
+    };
+  }
+  starCount = Math.max(starCount, index + 1);
+  post("Local star " + index + " sent to buffer loader: " + filePath + "\n");
+}
+
+function playstar(index) {
+  var i = parseInt(index, 10);
+  if (i < 0 || i >= MAX_STARS) {
+    post("playstar index must be 0-6.\n");
+    return;
+  }
+  outlet(0, "dsp_start");
+  outlet(0, "playstar", i);
+  post("playstar " + i + "\n");
 }
 
 function stars_downloaded() {
@@ -432,7 +469,7 @@ function scheduleVoice(delayMs, x, y, vp, va, idx) {
 
     if (ha) {
       outlet(0, "star" + i + "_amp", a * 0.85);
-      outlet(0, "star" + i + "_play");
+      outlet(0, "playstar", i);
     }
   }
 
