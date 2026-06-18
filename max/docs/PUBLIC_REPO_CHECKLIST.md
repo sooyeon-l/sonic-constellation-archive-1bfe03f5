@@ -61,3 +61,13 @@ desktop.ini
 ```
 
 If a tiny, licensed test WAV is essential, place it in a clearly documented fixture folder and explicitly unignore that exact file.
+
+## Stage 0 Max output and package policy
+
+- The ignored repository-relative output directory is `max/output/`.
+- The future default final synthesis file is `max/output/test_synth.wav`.
+- The required synthesis and recording path must work with native Max objects.
+- Package-dependent teammate effects, including Ableton objects when available, should be preserved as supported optional layers with a native-Max fallback.
+- If an optional package is unavailable, the patch must still load and complete synthesis using the native-Max path.
+- Jitter is part of the intended Max installation and should not be removed merely to avoid package setup.
+- Every required and optional Max package must eventually be documented with its installation source and a procedure for verifying that Max recognizes its objects.

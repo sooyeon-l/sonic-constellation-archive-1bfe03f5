@@ -7,7 +7,35 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# Dependencies
+node_modules/
+max/node_modules/
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+
+# Local Max configuration
+max/config.json
+max/**/config.local.json
+
+# Generated and downloaded audio
+max/**/*.wav
+max/**/*.webm
+max/**/*.aif
+max/**/*.aiff
+max/output/
+max/downloads/
+max/tmp/
+
+# Private/reference exports
+max/teammate_sources/**/private/
+max/teammate_sources/**/*.pdf
+max/teammate_sources/**/*.mp4
+max/teammate_sources/**/*.mov
+
+# Build output
 dist
 dist-ssr
 .output
@@ -25,6 +53,8 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
