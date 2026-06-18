@@ -389,6 +389,24 @@
       },
       {
         "box": {
+          "id": "obj-rec-diag",
+          "maxclass": "message",
+          "text": "recorder_diagnostic",
+          "patching_rect": [
+            615.0,
+            122.0,
+            155.0,
+            22.0
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
+        }
+      },
+      {
+        "box": {
           "id": "obj-16",
           "maxclass": "comment",
           "text": "3/4.  SYNTH COMMAND ROUTER  |  sfrecord~ int message: 1 = start recording,  0 = stop recording  (from Max 9 help file)",
@@ -406,7 +424,7 @@
         "box": {
           "id": "obj-17",
           "maxclass": "newobj",
-          "text": "route setfreq setsubfreq setpan setfilter setnoise setenv record_open record_start record_stop",
+          "text": "route setfreq setsubfreq setpan setfilter setnoise setenv record_open record_start record_stop dsp_start",
           "patching_rect": [
             810.0,
             62.0,
@@ -505,13 +523,31 @@
           "maxclass": "comment",
           "text": "int 0 = stop",
           "patching_rect": [
-            850.0,
+            945.0,
             138.0,
             100.0,
             16.0
           ],
           "numinlets": 1,
           "numoutlets": 0
+        }
+      },
+      {
+        "box": {
+          "id": "obj-dsp-start",
+          "maxclass": "message",
+          "text": "; dsp start",
+          "patching_rect": [
+            850.0,
+            134.0,
+            85.0,
+            22.0
+          ],
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ]
         }
       },
       {
@@ -1447,6 +1483,18 @@
       {
         "patchline": {
           "source": [
+            "obj-rec-diag",
+            0
+          ],
+          "destination": [
+            "obj-9",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
             "obj-9",
             0
           ],
@@ -1620,6 +1668,18 @@
           ],
           "destination": [
             "obj-44",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-17",
+            9
+          ],
+          "destination": [
+            "obj-dsp-start",
             0
           ]
         }

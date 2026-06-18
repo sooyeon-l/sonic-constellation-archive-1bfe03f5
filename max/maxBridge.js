@@ -18,6 +18,7 @@ const PROJECT_DIR = __dirname;
 const OUTPUT_DIR = path.join(PROJECT_DIR, "output");
 const DOWNLOAD_DIR = path.join(PROJECT_DIR, "downloads");
 const DEFAULT_SYNTH_WAV = path.join("output", "test_synth.wav");
+const MIN_WAV_BYTES = 4096;
 
 let config;
 let SITE_URL;
@@ -57,6 +58,7 @@ try {
   maxApi.post("maxBridge.js loaded");
   maxApi.post("SITE_URL = " + SITE_URL);
   maxApi.post("SUPABASE_BUCKET = " + SUPABASE_BUCKET);
+  maxApi.outlet("record_path", defaultSynthPath());
 } catch (err) {
   maxApi.post("Startup error: " + err.message);
 }
@@ -122,6 +124,23 @@ function downloadPath(filename) {
   return path.join(DOWNLOAD_DIR, filename);
 }
 
+function defaultSynthPath() {
+  ensureDirectory(OUTPUT_DIR);
+  return resolveLocalPath(DEFAULT_SYNTH_WAV);
+}
+
+function verifyWavFile(wavPath) {
+  const localPath = resolveLocalPath(wavPath);
+  if (!fs.existsSync(localPath)) {
+    return { ok: false, path: localPath, size: 0, error: "missing" };
+  }
+  const size = fs.statSync(localPath).size;
+  if (size < MIN_WAV_BYTES) {
+    return { ok: false, path: localPath, size, error: "too_small" };
+  }
+  return { ok: true, path: localPath, size, error: null };
+}
+
 function convertWebmToWav(webmPath, wavPath) {
   return new Promise((resolve, reject) => {
     if (!_ffmpegBin) {
@@ -170,10 +189,13 @@ async function uploadSynthesizedWavThroughBackend(constellationId, wavPath) {
     throw new Error("Missing MAX_WORKER_SECRET in config.json");
   }
 
-  const localPath = resolveLocalPath(wavPath);
+  const verified = verifyWavFile(wavPath);
+  const localPath = verified.path;
 
-  if (!fs.existsSync(localPath)) {
-    throw new Error("WAV file does not exist: " + localPath);
+  if (!verified.ok) {
+    throw new Error(
+      "WAV file is not ready for upload (" + verified.error + "): " + localPath
+    );
   }
 
   const audio_base64 = fs.readFileSync(localPath).toString("base64");
@@ -296,6 +318,46 @@ maxApi.addHandler("fetchPending", async () => {
   } catch (err) {
     maxApi.post("fetchPending error: " + err.message);
     maxApi.outlet("error", err.message);
+  }
+});
+
+maxApi.addHandler("getDefaultSynthPath", async () => {
+  try {
+    requireStartup();
+    const wavPath = defaultSynthPath();
+    maxApi.outlet("record_path", wavPath);
+    maxApi.post("Default synthesis output path is ready.");
+  } catch (err) {
+    maxApi.post("getDefaultSynthPath error: " + err.message);
+    maxApi.outlet("error", err.message);
+  }
+});
+
+maxApi.addHandler("verifyRecording", async (localWavFilename = DEFAULT_SYNTH_WAV) => {
+  try {
+    requireStartup();
+    const verified = verifyWavFile(localWavFilename);
+    if (!verified.ok) {
+      maxApi.post(
+        "Recording verification failed (" +
+          verified.error +
+          "): " +
+          verified.path
+      );
+      maxApi.outlet("recording_failed", verified.error, verified.path, verified.size);
+      return;
+    }
+    maxApi.post(
+      "Recording verified: " +
+        verified.path +
+        " (" +
+        Math.round(verified.size / 1024) +
+        " KB)"
+    );
+    maxApi.outlet("recording_verified", verified.path, verified.size);
+  } catch (err) {
+    maxApi.post("verifyRecording error: " + err.message);
+    maxApi.outlet("recording_failed", err.message, "null", 0);
   }
 });
 
