@@ -20,14 +20,13 @@ max/node_modules/
 max/config.json
 max/**/config.local.json
 
-# Generated and downloaded audio
-max/**/*.wav
-max/**/*.webm
-max/**/*.aif
-max/**/*.aiff
+# Generated and downloaded Max audio
 max/output/
 max/downloads/
 max/tmp/
+max/test_synth.wav
+max/star_*.wav
+max/star_*.webm
 
 # Private/reference exports
 max/teammate_sources/**/private/
